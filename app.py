@@ -49,9 +49,13 @@ POPULER = {
  "ADBE":"Adobe","CRM":"Salesforce","NKE":"Nike","MCD":"McDonald's","SBUX":"Starbucks",
  "BA":"Boeing","XOM":"Exxon","PFE":"Pfizer","BAC":"Bank of America","WMT":"Walmart",
  "COST":"Costco","HD":"Home Depot","UBER":"Uber","PLTR":"Palantir","COIN":"Coinbase",
- "SPY":"S&P 500 (SPY)","QQQ":"Nasdaq 100 (QQQ)","BTC-USD":"Bitcoin","ETH-USD":"Ethereum",
- "GLD":"Altın (GLD)",
+ "SPY":"S&P 500","QQQ":"Nasdaq 100","BTC-USD":"Bitcoin","ETH-USD":"Ethereum","GLD":"Altın",
 }
+
+KATALOG = [f"{ad} ({tk})" for tk, ad in POPULER.items()]
+KATALOG_MAP = {f"{ad} ({tk})": tk for tk, ad in POPULER.items()}
+def etiket_kod(code):
+    return next((lbl for lbl, c in KATALOG_MAP.items() if c == code), None)
 
 @st.cache_data(ttl=3600)
 def hisse_ara(sorgu):
@@ -184,18 +188,22 @@ RENKLER = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed"]
 # ---------- Preset & durum ----------
 BUGUN = date.today()
 PRESETS = [
-    ("🚀 Pandemi başında 1.000$ Apple", dict(k_sorgu="AAPL", k_ekstra="", k_tutar=1000.0,
-        k_sembol="$", k_bas=date(2020, 3, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
-    ("📈 5 yıldır her ay 100$ NVDA", dict(k_sorgu="NVDA", k_ekstra="", k_aylik=100.0, k_artis=0,
-        k_sembol="$", k_bas=BUGUN - timedelta(days=365*5), k_bit=BUGUN,
+    ("🚀 Pandemi başında 1.000$ Apple", dict(k_ana="Apple (AAPL)", k_sorgu="", k_ekstra="",
+        k_tutar=1000.0, k_sembol="$", k_bas=date(2020, 3, 1), k_bit=BUGUN,
+        k_yontem="Tek seferde (baştan hepsi)")),
+    ("📈 5 yıldır her ay 100$ NVDA", dict(k_ana="NVIDIA (NVDA)", k_sorgu="", k_ekstra="",
+        k_aylik=100.0, k_artis=0, k_sembol="$", k_bas=BUGUN - timedelta(days=365*5), k_bit=BUGUN,
         k_yontem="Aylara yayarak (her ay biraz)")),
-    ("🏛️ 2008 krizinde SPY", dict(k_sorgu="SPY", k_ekstra="", k_tutar=1000.0, k_sembol="$",
-        k_bas=date(2008, 9, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
-    ("⚔️ Apple vs Microsoft vs Nvidia", dict(k_sorgu="AAPL", k_ekstra="MSFT, NVDA", k_tutar=1000.0,
-        k_sembol="$", k_bas=date(2019, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
+    ("🏛️ 2008 krizinde SPY", dict(k_ana="S&P 500 (SPY)", k_sorgu="", k_ekstra="",
+        k_tutar=1000.0, k_sembol="$", k_bas=date(2008, 9, 1), k_bit=BUGUN,
+        k_yontem="Tek seferde (baştan hepsi)")),
+    ("⚔️ Apple vs Microsoft vs Nvidia", dict(k_ana="Apple (AAPL)", k_sorgu="", k_ekstra="MSFT, NVDA",
+        k_tutar=1000.0, k_sembol="$", k_bas=date(2019, 1, 1), k_bit=BUGUN,
+        k_yontem="Tek seferde (baştan hepsi)")),
 ]
-_def = dict(k_sorgu="Apple", k_ekstra="", k_tutar=1000.0, k_aylik=100.0, k_artis=0, k_sembol="€",
-            k_bas=date(2020, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")
+_def = dict(k_ana="Apple (AAPL)", k_sorgu="", k_ekstra="", k_tutar=1000.0, k_aylik=100.0,
+            k_artis=0, k_sembol="€", k_bas=date(2020, 1, 1), k_bit=BUGUN,
+            k_yontem="Tek seferde (baştan hepsi)")
 for k, v in _def.items():
     st.session_state.setdefault(k, v)
 
@@ -210,20 +218,22 @@ with st.sidebar:
             st.rerun()
     st.divider()
 
-    sorgu = st.text_input("Şirket (ad veya kod)", key="k_sorgu",
-                          help="Apple, Microsoft, NVDA gibi yazın; listeden seçin.")
-    secilen, secilen_ad = sorgu.upper().strip(), sorgu.strip()
-    if sorgu.strip():
-        bulunan = hisse_ara(sorgu)
+    ana_lbl = st.selectbox("Şirket (listeden seç)", KATALOG, key="k_ana",
+                           help="Tıkla ve listeden seç; yazarak da filtreleyebilirsin.")
+    secilen, secilen_ad = KATALOG_MAP[ana_lbl], ana_lbl.split(" (")[0]
+    serbest = st.text_input("Listede yoksa şirket adı/kodu ara", key="k_sorgu",
+                            help="Az bilinen bir şirketi burada ara; boş bırakırsan üstteki seçim geçerli.")
+    if serbest.strip():
+        bulunan = hisse_ara(serbest)
         if bulunan:
             etiketler = [e for _, e in bulunan]
-            secim = st.selectbox("Listeden seçin", etiketler)
+            secim = st.selectbox("Arama sonucundan seç", etiketler, key="k_sonuc")
             i = etiketler.index(secim)
             secilen, secilen_ad = bulunan[i][0], bulunan[i][1].split(" (")[0]
+        else:
+            secilen, secilen_ad = serbest.upper().strip(), serbest.strip()
 
-    katalog = [f"{ad} ({tk})" for tk, ad in POPULER.items()]
-    katalog_map = {f"{ad} ({tk})": tk for tk, ad in POPULER.items()}
-    secili_etk = st.multiselect("Karşılaştır (listeden seç)", katalog,
+    secili_etk = st.multiselect("Karşılaştır (listeden seç)", KATALOG,
                                 help="Aynı grafikte kıyaslamak için şirket ekle (yazınca filtreler).")
     ekstra = st.text_input("Listede yoksa kod yaz (virgülle)", key="k_ekstra",
                            help="Örn. GOOGL, BTC-USD. Boş bırakabilirsin.")
@@ -263,7 +273,7 @@ if hesapla:
     if bas >= bit:
         st.error("Başlangıç tarihi, bitiş tarihinden önce olmalı.")
     else:
-        kodlar = ([secilen] + [katalog_map[e] for e in secili_etk]
+        kodlar = ([secilen] + [KATALOG_MAP[e] for e in secili_etk]
                   + [x.strip().upper() for x in ekstra.split(",") if x.strip()])
         gor = set(); kodlar = [k for k in kodlar if k and not (k in gor or gor.add(k))][:5]
         with st.spinner("Hesaplanıyor..."):
