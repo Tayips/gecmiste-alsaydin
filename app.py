@@ -101,11 +101,12 @@ def lump_deger(fiyat_usd, tutar, kur):
 
 def dca_deger(fiyat_usd, aylik_tutar, artis, kur):
     kur = _kur_hazirla(kur, fiyat_usd.index)
-    aylar = fiyat_usd.resample("MS").first().dropna()
+    # Her ayin GERCEK ilk islem gunu (ay basi tatile denk gelirse nan olmasin diye):
+    ilk_gunler = fiyat_usd.groupby(fiyat_usd.index.to_period("M")).head(1)
     kum = pd.Series(0.0, index=fiyat_usd.index); adet = 0.0; yatirilan = 0.0
-    for i, (t, pv) in enumerate(aylar.items()):
+    for i, (t, pv) in enumerate(ilk_gunler.items()):
         katki = aylik_tutar * (1 + artis) ** (i // 12)
-        adet += (katki / float(kur.asof(t))) / float(pv)
+        adet += (katki / float(kur.loc[t])) / float(pv)
         yatirilan += katki
         kum.loc[fiyat_usd.index >= t] = adet
     return kum * fiyat_usd * kur, yatirilan
