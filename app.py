@@ -71,6 +71,26 @@ def hisse_ara(sorgu):
         pass
     return sonuc[:15]
 
+@st.cache_data(ttl=86400)
+def cpi_serisi():
+    """ABD TUFE (CPIAUCSL) — FRED'den ucretsiz CSV. Aylik seri doner (None ise alinamadi)."""
+    try:
+        r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL",
+                         headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+        df = pd.read_csv(io.StringIO(r.text))
+        s = pd.Series(pd.to_numeric(df.iloc[:, 1], errors="coerce").values,
+                      index=pd.to_datetime(df.iloc[:, 0])).dropna().sort_index()
+        return s if len(s) else None
+    except Exception:
+        return None
+
+def reel_ayarla(curve, cpi):
+    """Nominal degeri, baslangic tarihi alim gucune gore enflasyondan arindirir."""
+    if cpi is None: return None
+    c = cpi.reindex(curve.index, method="ffill").ffill().bfill()
+    if c.isna().all(): return None
+    return curve * (float(c.iloc[0]) / c)
+
 @st.cache_data(ttl=3600)
 def fiyat_indir(ticker, bas, bit):
     df = yf.download(ticker, start=str(bas), end=str(bit), auto_adjust=True, progress=False)
@@ -179,11 +199,16 @@ with st.sidebar:
             i = etiketler.index(secim)
             secilen, secilen_ad = bulunan[i][0], bulunan[i][1].split(" (")[0]
 
-    ekstra = st.text_input("Karşılaştır (isteğe bağlı)", key="k_ekstra",
-                           help="Virgülle hisse kodları ekle: MSFT, GOOGL, BTC-USD. "
-                                "Boş bırakırsan tek hisse gösterilir.")
+    katalog = [f"{ad} ({tk})" for tk, ad in POPULER.items()]
+    katalog_map = {f"{ad} ({tk})": tk for tk, ad in POPULER.items()}
+    secili_etk = st.multiselect("Karşılaştır (listeden seç)", katalog,
+                                help="Aynı grafikte kıyaslamak için şirket ekle (yazınca filtreler).")
+    ekstra = st.text_input("Listede yoksa kod yaz (virgülle)", key="k_ekstra",
+                           help="Örn. GOOGL, BTC-USD. Boş bırakabilirsin.")
 
     sembol = st.selectbox("Para birimi", ["€", "$", "₺"], key="k_sembol")
+    reel = st.checkbox("Enflasyona göre (reel) göster",
+                       help="ABD TÜFE ile enflasyondan arındırılmış gerçek alım gücü.")
     yontem = st.radio("Yatırım şekli", ["Tek seferde (baştan hepsi)",
                       "Aylara yayarak (her ay biraz)"], key="k_yontem")
     if yontem.startswith("Tek"):
@@ -216,12 +241,14 @@ if hesapla:
     if bas >= bit:
         st.error("Başlangıç tarihi, bitiş tarihinden önce olmalı.")
     else:
-        kodlar = [secilen] + [x.strip().upper() for x in ekstra.split(",") if x.strip()]
+        kodlar = ([secilen] + [katalog_map[e] for e in secili_etk]
+                  + [x.strip().upper() for x in ekstra.split(",") if x.strip()])
         gor = set(); kodlar = [k for k in kodlar if k and not (k in gor or gor.add(k))][:5]
         with st.spinner("Hesaplanıyor..."):
             ham = {k: fiyat_indir(k, bas, bit) for k in kodlar}
             spy = fiyat_indir("SPY", bas, bit)
             kur = kur_serisi(sembol, bas, bit)
+            cpi = cpi_serisi() if reel else None
         ham = {k: v for k, v in ham.items() if v is not None}
         if not ham or spy is None:
             st.error("Veri bulunamadı. Hisse adını/kodunu kontrol et.")
@@ -231,17 +258,32 @@ if hesapla:
             eksikler = [k for k in kodlar if k not in ham]
             if eksikler:
                 st.caption("Bulunamayan ve atlanan: " + ", ".join(eksikler))
+            reel_aktif = reel and cpi is not None
+            if reel and not reel_aktif:
+                st.caption("Not: Enflasyon (TÜFE) verisi alınamadı; nominal gösteriliyor.")
 
             ortak = spy.index
             for v in ham.values():
                 ortak = ortak.intersection(v.index)
             spy = spy.loc[ortak]
-            spy_egri, yat = hesapla_egri(spy)
+
+            def belki_reel(curve):
+                if reel_aktif:
+                    r = reel_ayarla(curve, cpi)
+                    if r is not None: return r
+                return curve
+
+            spy_egri, yat = hesapla_egri(spy); spy_egri = belki_reel(spy_egri)
             s_son = float(spy_egri.iloc[-1])
 
-            hesap = {k: (lambda e: (e[0], e[1], metrik(e[0], e[1])))(hesapla_egri(v.loc[ortak]))
-                     for k, v in ham.items()}
+            def _hesap(v):
+                e, y = hesapla_egri(v.loc[ortak]); e = belki_reel(e)
+                return e, y, metrik(e, y)
+            hesap = {k: _hesap(v) for k, v in ham.items()}
             bas_s, bit_s = bas.strftime("%d.%m.%Y"), bit.strftime("%d.%m.%Y")
+            if reel_aktif:
+                st.caption(f"🔎 Reel mod açık: değerler ABD enflasyonundan arındırıldı "
+                           f"({bas_s} alım gücüne göre).")
 
             # =============== TEK HISSE: DETAYLI GORUNUM ===============
             if len(hesap) == 1:
