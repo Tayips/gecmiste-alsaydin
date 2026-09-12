@@ -17,6 +17,7 @@ from datetime import date, timedelta
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import requests
 import plotly.graph_objects as go
 import matplotlib
@@ -142,10 +143,23 @@ def metrik(egri, yatirilan):
 def para(x, s="€"):
     return f"{x:,.0f}".replace(",", ".") + " " + s
 
-def kart(baslik, deger, alt, alt_sinif=""):
+def sparkline(seri, renk="#2563eb", w=150, h=36):
+    """Kart icine kucuk bir cizgi grafik (SVG)."""
+    v = seri.values.astype(float)
+    if len(v) > 80:
+        v = v[:: max(1, len(v) // 80)]
+    lo, hi = float(np.nanmin(v)), float(np.nanmax(v))
+    rng = (hi - lo) or 1.0
+    n = len(v)
+    pts = " ".join(f"{w*i/(max(1,n-1)):.1f},{h-3-(h-6)*(x-lo)/rng:.1f}" for i, x in enumerate(v))
+    return (f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'style="margin-top:8px;display:block"><polyline fill="none" stroke="{renk}" '
+            f'stroke-width="2" points="{pts}"/></svg>')
+
+def kart(baslik, deger, alt, alt_sinif="", spark=""):
     return (f'<div class="kart"><div class="kpi-baslik">{baslik}</div>'
             f'<div class="kpi-deger">{deger}</div>'
-            f'<div class="kpi-alt {alt_sinif}">{alt}</div></div>')
+            f'<div class="kpi-alt {alt_sinif}">{alt}</div>{spark}</div>')
 
 def ozet_gorseli(ad, bas, bit, yatirilan, son, getiri, s_son, sembol):
     fig, ax = plt.subplots(figsize=(6.4, 3.35), dpi=200)
@@ -170,12 +184,15 @@ RENKLER = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed"]
 # ---------- Preset & durum ----------
 BUGUN = date.today()
 PRESETS = [
-    ("🚀 Pandemi başında Apple", dict(k_sorgu="AAPL", k_ekstra="", k_tutar=1000.0, k_sembol="$",
-        k_bas=date(2020, 3, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
+    ("🚀 Pandemi başında 1.000$ Apple", dict(k_sorgu="AAPL", k_ekstra="", k_tutar=1000.0,
+        k_sembol="$", k_bas=date(2020, 3, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
+    ("📈 5 yıldır her ay 100$ NVDA", dict(k_sorgu="NVDA", k_ekstra="", k_aylik=100.0, k_artis=0,
+        k_sembol="$", k_bas=BUGUN - timedelta(days=365*5), k_bit=BUGUN,
+        k_yontem="Aylara yayarak (her ay biraz)")),
+    ("🏛️ 2008 krizinde SPY", dict(k_sorgu="SPY", k_ekstra="", k_tutar=1000.0, k_sembol="$",
+        k_bas=date(2008, 9, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
     ("⚔️ Apple vs Microsoft vs Nvidia", dict(k_sorgu="AAPL", k_ekstra="MSFT, NVDA", k_tutar=1000.0,
         k_sembol="$", k_bas=date(2019, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
-    ("🏛️ 2010'dan beri SPY", dict(k_sorgu="SPY", k_ekstra="", k_tutar=1000.0, k_sembol="$",
-        k_bas=date(2010, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
 ]
 _def = dict(k_sorgu="Apple", k_ekstra="", k_tutar=1000.0, k_aylik=100.0, k_artis=0, k_sembol="€",
             k_bas=date(2020, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")
@@ -303,14 +320,17 @@ if hesapla:
                     f'<b>{para(h_son, sembol)}</b> olurdu — yaklaşık <b>{para(abs(kar), sembol)} {kz}</b> '
                     f'({h_get:+.0f}%).</div>', unsafe_allow_html=True)
                 st.write("")
+                h_renk = "#16a34a" if kar >= 0 else "#dc2626"
                 c1, c2, c3 = st.columns(3)
                 c1.markdown(kart("Dönem sonu değeri", para(h_son, sembol), f"{h_get:+.0f}%",
-                            "yesil" if kar >= 0 else "kirmizi"), unsafe_allow_html=True)
+                            "yesil" if kar >= 0 else "kirmizi",
+                            sparkline(h_egri, h_renk)), unsafe_allow_html=True)
                 c2.markdown(kart("Yıllık ortalama (yaklaşık)", f"{h_yil:+.1f}%", "yıllık büyüme"),
                             unsafe_allow_html=True)
                 c3.markdown(kart("Endekse (SPY) göre", para(s_son, sembol),
                             "Endeksi geçti ✅" if h_son >= s_son else "Endeksin altında ⚠️",
-                            "yesil" if h_son >= s_son else "kirmizi"), unsafe_allow_html=True)
+                            "yesil" if h_son >= s_son else "kirmizi",
+                            sparkline(spy_egri, "#9aa7bd")), unsafe_allow_html=True)
                 st.write("")
                 seriler = [(ad_ver(k), h_egri)]
                 png = ozet_gorseli(ad_ver(k), bas_s, bit_s, y, h_son, h_get, s_son, sembol)
@@ -325,23 +345,34 @@ if hesapla:
                 sutunlar = st.columns(len(sirali) + 1)
                 for idx, (k, (egri, y, (son, get, yil))) in enumerate(sirali):
                     tac = "🏆 " if idx == 0 else ""
+                    renk = "#16a34a" if son >= y else "#dc2626"
                     sutunlar[idx].markdown(kart(f"{tac}{ad_ver(k)}", para(son, sembol),
-                        f"{get:+.0f}%", "yesil" if son >= y else "kirmizi"), unsafe_allow_html=True)
+                        f"{get:+.0f}%", "yesil" if son >= y else "kirmizi",
+                        sparkline(egri, renk)), unsafe_allow_html=True)
                 sutunlar[-1].markdown(kart("Endeks (SPY)", para(s_son, sembol),
-                    f"{(s_son - yat) / yat * 100:+.0f}%"), unsafe_allow_html=True)
+                    f"{(s_son - yat) / yat * 100:+.0f}%", "", sparkline(spy_egri, "#9aa7bd")),
+                    unsafe_allow_html=True)
                 st.write("")
                 seriler = [(ad_ver(k), egri) for k, (egri, _, _) in sirali]
                 png = None
 
-            # --- Ortak grafik (tek veya coklu) ---
+            # --- Ortak grafik (tek veya coklu) + zengin tooltip ---
+            kur_gost = None if sembol == "$" else _kur_hazirla(kur, spy_egri.index)
             fig = go.Figure()
             for idx, (ad, egri) in enumerate(seriler):
+                fark = (egri - spy_egri.reindex(egri.index)).values
+                cd = np.column_stack([fark, kur_gost.reindex(egri.index).values]) \
+                     if kur_gost is not None else fark.reshape(-1, 1)
+                ht = ("%{x|%d.%m.%Y}<br>" + ad + ": %{y:,.0f} " + sembol +
+                      "<br>Endeksten fark: %{customdata[0]:,.0f} " + sembol)
+                if kur_gost is not None:
+                    ht += "<br>O günkü kur (1$): %{customdata[1]:,.2f} " + sembol
                 fig.add_trace(go.Scatter(x=egri.index, y=egri.values, name=ad,
                     line=dict(color=RENKLER[idx % len(RENKLER)], width=2.5),
-                    hovertemplate="%{x|%d.%m.%Y}<br>"+ad+": %{y:,.0f} "+sembol+"<extra></extra>"))
+                    customdata=cd, hovertemplate=ht + "<extra></extra>"))
             fig.add_trace(go.Scatter(x=spy_egri.index, y=spy_egri.values, name="Endeks (SPY)",
                 line=dict(color="#9aa7bd", width=2, dash="dot"),
-                hovertemplate="%{x|%d.%m.%Y}<br>Endeks: %{y:,.0f} "+sembol+"<extra></extra>"))
+                hovertemplate="%{x|%d.%m.%Y}<br>Endeks: %{y:,.0f} " + sembol + "<extra></extra>"))
             fig.update_layout(hovermode="x unified", height=450, margin=dict(l=10, r=10, t=30, b=10),
                 legend=dict(orientation="h", y=1.12), plot_bgcolor="#fff", paper_bgcolor="#fff",
                 yaxis_title="Değer (" + sembol + ")")
@@ -349,13 +380,17 @@ if hesapla:
 
             # --- Paylasim (yalnizca tek hisse) ---
             if png is not None:
-                p1, p2 = st.columns(2)
-                p1.download_button("📥 Özet görseli indir (paylaş)", data=png,
+                metin = (f"{secilen_ad} hissesine {bas_s}'de {para(yat, sembol)} yatırsaydım "
+                         f"bugün {para(h_son, sembol)} olurdu! #GeçmişteAlsaydın")
+                p1, p2, p3 = st.columns(3)
+                p1.download_button("📥 Özet görseli indir", data=png,
                     file_name=f"gecmiste_{secilen}.png", mime="image/png", use_container_width=True)
-                tw = "https://twitter.com/intent/tweet?" + urllib.parse.urlencode({
-                    "text": f"{secilen_ad} hissesine {bas_s}'de {para(yat, sembol)} yatırsaydım "
-                            f"bugün {para(s_son, sembol)}... #GeçmişteAlsaydın"})
-                p2.link_button("🐦 Twitter'da paylaş", tw, use_container_width=True)
+                tw = "https://twitter.com/intent/tweet?" + urllib.parse.urlencode({"text": metin})
+                p2.link_button("🐦 Twitter/X", tw, use_container_width=True)
+                li = "https://www.linkedin.com/feed/?" + urllib.parse.urlencode(
+                    {"shareActive": "true", "text": metin})
+                p3.link_button("💼 LinkedIn", li, use_container_width=True)
+                st.caption("İpucu: İndirdiğin özet görseli Instagram, WhatsApp veya her yerde paylaşabilirsin.")
 else:
     st.info("👈 Soldaki panelden bilgileri girip **Hesapla**'ya bas. Birden çok hisseyi "
             "karşılaştırmak için “Karşılaştır” kutusuna kod ekle (örn. MSFT, NVDA). "
