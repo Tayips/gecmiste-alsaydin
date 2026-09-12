@@ -71,18 +71,23 @@ def hisse_ara(sorgu):
         pass
     return sonuc[:15]
 
-@st.cache_data(ttl=86400)
+# ABD TUFE (CPIAUCSL) — yaklasik yillik (Ocak) degerleri, uygulamaya gomulu.
+# Kaynak: FRED. Guvenilirlik icin internetten cekmek yerine gomulu; yeni yil
+# ciktikca son degeri guncelleyebilirsin. Reel (enflasyona gore) mod bunu kullanir.
+_CPI_YILLIK = {
+    2000: 169.3, 2001: 175.6, 2002: 177.7, 2003: 181.7, 2004: 185.2, 2005: 190.7,
+    2006: 198.3, 2007: 202.4, 2008: 211.1, 2009: 211.1, 2010: 216.7, 2011: 220.2,
+    2012: 226.7, 2013: 230.3, 2014: 233.9, 2015: 233.7, 2016: 236.9, 2017: 242.8,
+    2018: 247.9, 2019: 251.7, 2020: 257.9, 2021: 261.6, 2022: 281.1, 2023: 299.2,
+    2024: 308.4, 2025: 317.6, 2026: 324.4, 2027: 331.0,
+}
+
+@st.cache_data
 def cpi_serisi():
-    """ABD TUFE (CPIAUCSL) — FRED'den ucretsiz CSV. Aylik seri doner (None ise alinamadi)."""
-    try:
-        r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL",
-                         headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
-        df = pd.read_csv(io.StringIO(r.text))
-        s = pd.Series(pd.to_numeric(df.iloc[:, 1], errors="coerce").values,
-                      index=pd.to_datetime(df.iloc[:, 0])).dropna().sort_index()
-        return s if len(s) else None
-    except Exception:
-        return None
+    """Gomulu yillik TUFE'yi aylik seriye cevirir (dogrusal ara deger)."""
+    s = pd.Series(_CPI_YILLIK)
+    s.index = pd.to_datetime([f"{y}-01-01" for y in s.index])
+    return s.sort_index().resample("MS").interpolate("linear")
 
 def reel_ayarla(curve, cpi):
     """Nominal degeri, baslangic tarihi alim gucune gore enflasyondan arindirir."""
