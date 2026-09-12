@@ -1,13 +1,10 @@
 """
-GECMISTE ALSAYDIN? — Surum 4 (UI/UX yenilemesi)
+GECMISTE ALSAYDIN? — Surum 5 (Coklu karsilastirma)
 ------------------------------------------------
-- Sol kontrol paneli (sidebar) + sag sonuc alani (dashboard hissi)
-- Buyuk KPI kartlari
-- Etkilesimli grafik (Plotly, fareyle deger gosterir)
-- Hazir senaryo butonlari (preset)
-- DCA: "her ay ne kadar" + yillik artis
-- Sirket arama, € / $ / ₺ (gercek kur), sade sonuc cumlesi
-- Paylasilabilir ozet gorseli (PNG indir) + Twitter linki
+- Tek hisse: detayli gorunum (cumle + KPI + paylasim)
+- Birden cok hisse: karsilastirma modu (sirali kartlar + tek grafik)
+- Sol kontrol paneli, KPI kartlari, etkilesimli Plotly grafik, hazir senaryolar
+- DCA (her ay + yillik artis), € / $ / ₺ (gercek kur), her zaman endeks (SPY) kiyasi
 
 Egitim amaclidir; yatirim tavsiyesi degildir.
 CALISTIRMA:  pip install streamlit yfinance pandas curl_cffi plotly matplotlib
@@ -33,9 +30,9 @@ st.markdown("""
   .stApp { background:#f7f9fc; }
   h1 { color:#14213d; font-weight:800; }
   .kart { background:#fff; border:1px solid #e6eaf0; border-radius:16px;
-          padding:18px 20px; box-shadow:0 1px 3px rgba(20,33,61,.06); }
-  .kpi-baslik { color:#6b7280; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
-  .kpi-deger { font-size:30px; font-weight:800; color:#14213d; margin-top:4px; }
+          padding:18px 20px; box-shadow:0 1px 3px rgba(20,33,61,.06); margin-bottom:8px; }
+  .kpi-baslik { color:#6b7280; font-size:13px; font-weight:600; }
+  .kpi-deger { font-size:28px; font-weight:800; color:#14213d; margin-top:4px; }
   .kpi-alt { font-size:15px; font-weight:700; margin-top:2px; }
   .yesil { color:#16a34a; } .kirmizi { color:#dc2626; }
   .cumle { background:#fff; border-radius:16px; padding:20px 24px; font-size:20px;
@@ -51,7 +48,8 @@ POPULER = {
  "ADBE":"Adobe","CRM":"Salesforce","NKE":"Nike","MCD":"McDonald's","SBUX":"Starbucks",
  "BA":"Boeing","XOM":"Exxon","PFE":"Pfizer","BAC":"Bank of America","WMT":"Walmart",
  "COST":"Costco","HD":"Home Depot","UBER":"Uber","PLTR":"Palantir","COIN":"Coinbase",
- "SPY":"S&P 500 (SPY)","QQQ":"Nasdaq 100 (QQQ)",
+ "SPY":"S&P 500 (SPY)","QQQ":"Nasdaq 100 (QQQ)","BTC-USD":"Bitcoin","ETH-USD":"Ethereum",
+ "GLD":"Altın (GLD)",
 }
 
 @st.cache_data(ttl=3600)
@@ -101,7 +99,6 @@ def lump_deger(fiyat_usd, tutar, kur):
 
 def dca_deger(fiyat_usd, aylik_tutar, artis, kur):
     kur = _kur_hazirla(kur, fiyat_usd.index)
-    # Her ayin GERCEK ilk islem gunu (ay basi tatile denk gelirse nan olmasin diye):
     ilk_gunler = fiyat_usd.groupby(fiyat_usd.index.to_period("M")).head(1)
     kum = pd.Series(0.0, index=fiyat_usd.index); adet = 0.0; yatirilan = 0.0
     for i, (t, pv) in enumerate(ilk_gunler.items()):
@@ -120,41 +117,47 @@ def metrik(egri, yatirilan):
 def para(x, s="€"):
     return f"{x:,.0f}".replace(",", ".") + " " + s
 
+def kart(baslik, deger, alt, alt_sinif=""):
+    return (f'<div class="kart"><div class="kpi-baslik">{baslik}</div>'
+            f'<div class="kpi-deger">{deger}</div>'
+            f'<div class="kpi-alt {alt_sinif}">{alt}</div></div>')
+
 def ozet_gorseli(ad, bas, bit, yatirilan, son, getiri, s_son, sembol):
     fig, ax = plt.subplots(figsize=(6.4, 3.35), dpi=200)
     fig.patch.set_facecolor("#14213d"); ax.axis("off")
     renk = "#4ade80" if son >= yatirilan else "#f87171"
-    ax.text(0.5, 0.90, "Geçmişte Alsaydın?", ha="center", color="#ffffff",
+    ax.text(0.5, 0.90, "Geçmişte Alsaydın?", ha="center", color="#fff",
             fontsize=16, fontweight="bold", transform=ax.transAxes)
     ax.text(0.5, 0.74, f"{ad} · {bas} – {bit}", ha="center", color="#c7d0e0",
             fontsize=10, transform=ax.transAxes)
     ax.text(0.5, 0.50, para(son, sembol), ha="center", color=renk,
             fontsize=30, fontweight="bold", transform=ax.transAxes)
     ax.text(0.5, 0.34, f"{para(yatirilan, sembol)} yatırım → {getiri:+.0f}%",
-            ha="center", color="#ffffff", fontsize=12, transform=ax.transAxes)
+            ha="center", color="#fff", fontsize=12, transform=ax.transAxes)
     ax.text(0.5, 0.15, f"Aynı para endekste (SPY): {para(s_son, sembol)}",
             ha="center", color="#9aa7bd", fontsize=9, transform=ax.transAxes)
     buf = io.BytesIO(); fig.savefig(buf, format="png", bbox_inches="tight",
                                     facecolor=fig.get_facecolor()); plt.close(fig)
     return buf.getvalue()
 
+RENKLER = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed"]
+
 # ---------- Preset & durum ----------
 BUGUN = date.today()
 PRESETS = [
-    ("🚀 Pandemi başında Apple", dict(k_sorgu="AAPL", k_tutar=1000.0, k_sembol="$",
+    ("🚀 Pandemi başında Apple", dict(k_sorgu="AAPL", k_ekstra="", k_tutar=1000.0, k_sembol="$",
         k_bas=date(2020, 3, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
-    ("📈 5 yıl her ay NVDA", dict(k_sorgu="NVDA", k_aylik=100.0, k_sembol="$",
-        k_bas=BUGUN - timedelta(days=365*5), k_bit=BUGUN,
-        k_yontem="Aylara yayarak (her ay biraz)")),
-    ("🏛️ 2010'dan beri SPY", dict(k_sorgu="SPY", k_tutar=1000.0, k_sembol="$",
+    ("⚔️ Apple vs Microsoft vs Nvidia", dict(k_sorgu="AAPL", k_ekstra="MSFT, NVDA", k_tutar=1000.0,
+        k_sembol="$", k_bas=date(2019, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
+    ("🏛️ 2010'dan beri SPY", dict(k_sorgu="SPY", k_ekstra="", k_tutar=1000.0, k_sembol="$",
         k_bas=date(2010, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")),
 ]
-_def = dict(k_sorgu="Apple", k_tutar=1000.0, k_aylik=100.0, k_artis=0, k_sembol="€",
+_def = dict(k_sorgu="Apple", k_ekstra="", k_tutar=1000.0, k_aylik=100.0, k_artis=0, k_sembol="€",
             k_bas=date(2020, 1, 1), k_bit=BUGUN, k_yontem="Tek seferde (baştan hepsi)")
 for k, v in _def.items():
     st.session_state.setdefault(k, v)
 
-# ---------- SIDEBAR: kontrol paneli ----------
+# ---------- SIDEBAR ----------
 with st.sidebar:
     st.header("Ayarlar")
     st.caption("Hazır senaryo dene:")
@@ -176,6 +179,10 @@ with st.sidebar:
             i = etiketler.index(secim)
             secilen, secilen_ad = bulunan[i][0], bulunan[i][1].split(" (")[0]
 
+    ekstra = st.text_input("Karşılaştır (isteğe bağlı)", key="k_ekstra",
+                           help="Virgülle hisse kodları ekle: MSFT, GOOGL, BTC-USD. "
+                                "Boş bırakırsan tek hisse gösterilir.")
+
     sembol = st.selectbox("Para birimi", ["€", "$", "₺"], key="k_sembol")
     yontem = st.radio("Yatırım şekli", ["Tek seferde (baştan hepsi)",
                       "Aylara yayarak (her ay biraz)"], key="k_yontem")
@@ -184,104 +191,128 @@ with st.sidebar:
         aylik = artis = None
     else:
         aylik = st.number_input("Her ay ne kadar?", min_value=1.0, step=50.0, key="k_aylik")
-        artis = st.slider("Her yıl katkıyı artır (%)", 0, 30, key="k_artis",
-                          help="Enflasyona göre her yıl aylık yatırımını artırmak istersen.") / 100.0
+        artis = st.slider("Her yıl katkıyı artır (%)", 0, 30, key="k_artis") / 100.0
 
     c_b, c_e = st.columns(2)
-    bas = c_b.date_input("Başlangıç", key="k_bas",
-                         min_value=date(2000, 1, 1), max_value=BUGUN)
-    bit = c_e.date_input("Bitiş", key="k_bit",
-                         min_value=date(2000, 1, 2), max_value=BUGUN)
+    bas = c_b.date_input("Başlangıç", key="k_bas", min_value=date(2000, 1, 1), max_value=BUGUN)
+    bit = c_e.date_input("Bitiş", key="k_bit", min_value=date(2000, 1, 2), max_value=BUGUN)
     hesapla = st.button("Hesapla", type="primary", use_container_width=True)
 
 # ---------- ANA ALAN ----------
 st.title("📈 Geçmişte Alsaydın?")
-st.caption("Soldaki panelden bir şirket, tutar ve tarih seç; sonuç her zaman borsa endeksi (SPY) "
-           "ile karşılaştırılır. Bu araç yatırım tavsiyesi değildir; yalnızca geçmişi gösterir.")
+st.caption("Soldaki panelden bir (veya birkaç) şirket, tutar ve tarih seç. Sonuç her zaman "
+           "borsa endeksi (SPY) ile karşılaştırılır. Yatırım tavsiyesi değildir; geçmişi gösterir.")
+
+def hesapla_egri(fiyat_usd):
+    if yontem.startswith("Tek"):
+        return lump_deger(fiyat_usd, tutar, kur)
+    return dca_deger(fiyat_usd, aylik, artis, kur)
+
+def ad_ver(kod):
+    if kod == secilen: return secilen_ad
+    return POPULER.get(kod, kod)
 
 if hesapla:
     if bas >= bit:
         st.error("Başlangıç tarihi, bitiş tarihinden önce olmalı.")
     else:
+        kodlar = [secilen] + [x.strip().upper() for x in ekstra.split(",") if x.strip()]
+        gor = set(); kodlar = [k for k in kodlar if k and not (k in gor or gor.add(k))][:5]
         with st.spinner("Hesaplanıyor..."):
-            fiyat = fiyat_indir(secilen, bas, bit)
+            ham = {k: fiyat_indir(k, bas, bit) for k in kodlar}
             spy = fiyat_indir("SPY", bas, bit)
             kur = kur_serisi(sembol, bas, bit)
-        if fiyat is None or spy is None:
-            st.error(f"'{secilen}' için veri bulunamadı. Şirket adını/kodunu kontrol et.")
+        ham = {k: v for k, v in ham.items() if v is not None}
+        if not ham or spy is None:
+            st.error("Veri bulunamadı. Hisse adını/kodunu kontrol et.")
         else:
             if sembol != "$" and kur is None:
                 st.caption("Not: Kur verisi alınamadı; sonuç dolar bazlı gösteriliyor.")
-            ortak = fiyat.index.intersection(spy.index)
-            fiyat, spy = fiyat.loc[ortak], spy.loc[ortak]
+            eksikler = [k for k in kodlar if k not in ham]
+            if eksikler:
+                st.caption("Bulunamayan ve atlanan: " + ", ".join(eksikler))
 
-            if yontem.startswith("Tek"):
-                h_egri, yat = lump_deger(fiyat, tutar, kur)
-                s_egri, _   = lump_deger(spy,   tutar, kur)
-                ekdca = ""
-            else:
-                h_egri, yat = dca_deger(fiyat, aylik, artis, kur)
-                s_egri, _   = dca_deger(spy,   aylik, artis, kur)
-                ekdca = f" (her ay {para(aylik, sembol)}, toplam {para(yat, sembol)} yatırım)"
+            ortak = spy.index
+            for v in ham.values():
+                ortak = ortak.intersection(v.index)
+            spy = spy.loc[ortak]
+            spy_egri, yat = hesapla_egri(spy)
+            s_son = float(spy_egri.iloc[-1])
 
-            h_son, h_get, h_yil = metrik(h_egri, yat)
-            s_son, s_get, s_yil = metrik(s_egri, yat)
-            kar = h_son - yat
-            kz = "kâr" if kar >= 0 else "zarar"
+            hesap = {k: (lambda e: (e[0], e[1], metrik(e[0], e[1])))(hesapla_egri(v.loc[ortak]))
+                     for k, v in ham.items()}
             bas_s, bit_s = bas.strftime("%d.%m.%Y"), bit.strftime("%d.%m.%Y")
 
-            # --- Sonuc cumlesi ---
-            sinif = "cumle" if kar >= 0 else "cumle zarar"
-            st.markdown(
-                f'<div class="{sinif}"><b>{bas_s} – {bit_s}</b> arasında <b>{secilen_ad}</b> '
-                f'hissesine <b>{para(yat, sembol)}</b> yatırsaydınız{ekdca}, dönem sonunda '
-                f'<b>{para(h_son, sembol)}</b> olurdu — yaklaşık <b>{para(abs(kar), sembol)} {kz}</b> '
-                f'({h_get:+.0f}%).</div>', unsafe_allow_html=True)
-            st.write("")
+            # =============== TEK HISSE: DETAYLI GORUNUM ===============
+            if len(hesap) == 1:
+                k = next(iter(hesap)); h_egri, y, (h_son, h_get, h_yil) = hesap[k]
+                kar = h_son - y; kz = "kâr" if kar >= 0 else "zarar"
+                ekdca = (f" (her ay {para(aylik, sembol)}, toplam {para(y, sembol)})"
+                         if not yontem.startswith("Tek") else "")
+                sinif = "cumle" if kar >= 0 else "cumle zarar"
+                st.markdown(
+                    f'<div class="{sinif}"><b>{bas_s} – {bit_s}</b> arasında <b>{ad_ver(k)}</b> '
+                    f'hissesine <b>{para(y, sembol)}</b> yatırsaydınız{ekdca}, dönem sonunda '
+                    f'<b>{para(h_son, sembol)}</b> olurdu — yaklaşık <b>{para(abs(kar), sembol)} {kz}</b> '
+                    f'({h_get:+.0f}%).</div>', unsafe_allow_html=True)
+                st.write("")
+                c1, c2, c3 = st.columns(3)
+                c1.markdown(kart("Dönem sonu değeri", para(h_son, sembol), f"{h_get:+.0f}%",
+                            "yesil" if kar >= 0 else "kirmizi"), unsafe_allow_html=True)
+                c2.markdown(kart("Yıllık ortalama (yaklaşık)", f"{h_yil:+.1f}%", "yıllık büyüme"),
+                            unsafe_allow_html=True)
+                c3.markdown(kart("Endekse (SPY) göre", para(s_son, sembol),
+                            "Endeksi geçti ✅" if h_son >= s_son else "Endeksin altında ⚠️",
+                            "yesil" if h_son >= s_son else "kirmizi"), unsafe_allow_html=True)
+                st.write("")
+                seriler = [(ad_ver(k), h_egri)]
+                png = ozet_gorseli(ad_ver(k), bas_s, bit_s, y, h_son, h_get, s_son, sembol)
+            # =============== COKLU: KARSILASTIRMA ===============
+            else:
+                sirali = sorted(hesap.items(), key=lambda kv: kv[1][2][0], reverse=True)
+                st.markdown(f'<div class="cumle"><b>{bas_s} – {bit_s}</b> arasında '
+                            f'<b>{para(yat, sembol)}</b> yatırımla en çok kazandıran: '
+                            f'<b>{ad_ver(sirali[0][0])}</b> ({sirali[0][1][2][1]:+.0f}%).</div>',
+                            unsafe_allow_html=True)
+                st.write("")
+                sutunlar = st.columns(len(sirali) + 1)
+                for idx, (k, (egri, y, (son, get, yil))) in enumerate(sirali):
+                    tac = "🏆 " if idx == 0 else ""
+                    sutunlar[idx].markdown(kart(f"{tac}{ad_ver(k)}", para(son, sembol),
+                        f"{get:+.0f}%", "yesil" if son >= y else "kirmizi"), unsafe_allow_html=True)
+                sutunlar[-1].markdown(kart("Endeks (SPY)", para(s_son, sembol),
+                    f"{(s_son - yat) / yat * 100:+.0f}%"), unsafe_allow_html=True)
+                st.write("")
+                seriler = [(ad_ver(k), egri) for k, (egri, _, _) in sirali]
+                png = None
 
-            # --- KPI kartlari ---
-            def kart(baslik, deger, alt, alt_sinif=""):
-                return (f'<div class="kart"><div class="kpi-baslik">{baslik}</div>'
-                        f'<div class="kpi-deger">{deger}</div>'
-                        f'<div class="kpi-alt {alt_sinif}">{alt}</div></div>')
-            k1, k2, k3 = st.columns(3)
-            k1.markdown(kart("Dönem sonu değeri", para(h_son, sembol),
-                        f"{h_get:+.0f}%", "yesil" if kar >= 0 else "kirmizi"),
-                        unsafe_allow_html=True)
-            k2.markdown(kart("Yıllık ortalama (yaklaşık)", f"{h_yil:+.1f}%", "yıllık büyüme"),
-                        unsafe_allow_html=True)
-            fark = h_son - s_son
-            k3.markdown(kart("Endekse (SPY) göre", para(s_son, sembol),
-                        ("Endeksi geçti ✅" if fark >= 0 else "Endeksin altında ⚠️"),
-                        "yesil" if fark >= 0 else "kirmizi"), unsafe_allow_html=True)
-            st.write("")
-
-            # --- Etkilesimli grafik ---
+            # --- Ortak grafik (tek veya coklu) ---
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=h_egri.index, y=h_egri.values, name=secilen_ad,
-                          line=dict(color="#2563eb", width=2.5),
-                          hovertemplate="%{x|%d.%m.%Y}<br>Bu hisse: %{y:,.0f} "+sembol+"<extra></extra>"))
-            fig.add_trace(go.Scatter(x=s_egri.index, y=s_egri.values, name="Endeks (SPY)",
-                          line=dict(color="#9aa7bd", width=2, dash="dot"),
-                          hovertemplate="%{x|%d.%m.%Y}<br>Endeks: %{y:,.0f} "+sembol+"<extra></extra>"))
-            fig.update_layout(hovermode="x unified", height=430, margin=dict(l=10, r=10, t=30, b=10),
-                              legend=dict(orientation="h", y=1.1), plot_bgcolor="#fff",
-                              paper_bgcolor="#fff", yaxis_title="Değer ("+sembol+")")
+            for idx, (ad, egri) in enumerate(seriler):
+                fig.add_trace(go.Scatter(x=egri.index, y=egri.values, name=ad,
+                    line=dict(color=RENKLER[idx % len(RENKLER)], width=2.5),
+                    hovertemplate="%{x|%d.%m.%Y}<br>"+ad+": %{y:,.0f} "+sembol+"<extra></extra>"))
+            fig.add_trace(go.Scatter(x=spy_egri.index, y=spy_egri.values, name="Endeks (SPY)",
+                line=dict(color="#9aa7bd", width=2, dash="dot"),
+                hovertemplate="%{x|%d.%m.%Y}<br>Endeks: %{y:,.0f} "+sembol+"<extra></extra>"))
+            fig.update_layout(hovermode="x unified", height=450, margin=dict(l=10, r=10, t=30, b=10),
+                legend=dict(orientation="h", y=1.12), plot_bgcolor="#fff", paper_bgcolor="#fff",
+                yaxis_title="Değer (" + sembol + ")")
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- Paylasim ---
-            png = ozet_gorseli(secilen_ad, bas_s, bit_s, yat, h_son, h_get, s_son, sembol)
-            pc1, pc2 = st.columns(2)
-            pc1.download_button("📥 Özet görseli indir (paylaş)", data=png,
-                                file_name=f"gecmiste_{secilen}.png", mime="image/png",
-                                use_container_width=True)
-            tw = "https://twitter.com/intent/tweet?" + urllib.parse.urlencode({
-                "text": f"{secilen_ad} hissesine {bas_s}'de {para(yat, sembol)} yatırsaydım "
-                        f"bugün {para(h_son, sembol)} olurdu ({h_get:+.0f}%)! #GeçmişteAlsaydın"})
-            pc2.link_button("🐦 Twitter'da paylaş", tw, use_container_width=True)
+            # --- Paylasim (yalnizca tek hisse) ---
+            if png is not None:
+                p1, p2 = st.columns(2)
+                p1.download_button("📥 Özet görseli indir (paylaş)", data=png,
+                    file_name=f"gecmiste_{secilen}.png", mime="image/png", use_container_width=True)
+                tw = "https://twitter.com/intent/tweet?" + urllib.parse.urlencode({
+                    "text": f"{secilen_ad} hissesine {bas_s}'de {para(yat, sembol)} yatırsaydım "
+                            f"bugün {para(s_son, sembol)}... #GeçmişteAlsaydın"})
+                p2.link_button("🐦 Twitter'da paylaş", tw, use_container_width=True)
 else:
-    st.info("👈 Soldaki panelden bilgileri girip **Hesapla**'ya bas. Hızlı denemek için "
-            "yukarıdaki hazır senaryo butonlarını da kullanabilirsin.")
+    st.info("👈 Soldaki panelden bilgileri girip **Hesapla**'ya bas. Birden çok hisseyi "
+            "karşılaştırmak için “Karşılaştır” kutusuna kod ekle (örn. MSFT, NVDA). "
+            "Hızlı denemek için yukarıdaki hazır senaryoları kullan.")
 
 st.divider()
 with st.expander("ℹ️ Bu araç hakkında / uyarı"):
