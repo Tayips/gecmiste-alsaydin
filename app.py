@@ -432,9 +432,13 @@ lang = DILLER[dil_ad]
 L = T[lang]
 koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
 P = palet(koyu)
+btn_css = (f'.stDownloadButton button, [data-testid="stLinkButton"] a '
+           f'{{ background:{P["panel"]}; color:{P["text"]}; border:1px solid {P["border"]}; }}'
+           if koyu else "")
 
 st.markdown(f"""
 <style>
+  {btn_css}
   .stApp {{ background:{P['bg']}; }}
   [data-testid="stSidebar"] {{ background:{P['panel']}; }}
   .stApp, [data-testid="stSidebar"], h1, h2, h3, label, p, span, .stMarkdown {{ color:{P['text']}; }}
