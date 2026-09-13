@@ -419,23 +419,34 @@ _def = dict(k_ana="Apple (AAPL)", k_sorgu="", k_ekstra="", k_tutar=1000.0, k_ayl
 for k, v in _def.items():
     st.session_state.setdefault(k, v)
 
-# ==================== DIL SECIMI ====================
+# ==================== DIL + TEMA ====================
+DARK_LBL = {"tr":"🌙 Karanlık mod","en":"🌙 Dark mode","de":"🌙 Dunkelmodus",
+            "ru":"🌙 Тёмная тема","es":"🌙 Modo oscuro","ar":"🌙 الوضع الداكن"}
+def palet(koyu):
+    if koyu:
+        return dict(bg="#0f1420", panel="#1a2233", border="#2a3550", text="#e8eaed", muted="#9aa7bd")
+    return dict(bg="#f7f9fc", panel="#ffffff", border="#e6eaf0", text="#14213d", muted="#6b7280")
+
 dil_ad = st.sidebar.selectbox("🌐 Language / Dil", list(DILLER.keys()), key="k_lang")
 lang = DILLER[dil_ad]
 L = T[lang]
+koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
+P = palet(koyu)
 
 st.markdown(f"""
 <style>
-  .stApp {{ background:#f7f9fc; }}
-  h1 {{ color:#14213d; font-weight:800; }}
-  .kart {{ background:#fff; border:1px solid #e6eaf0; border-radius:16px;
-          padding:18px 20px; box-shadow:0 1px 3px rgba(20,33,61,.06); margin-bottom:8px; }}
-  .kpi-baslik {{ color:#6b7280; font-size:13px; font-weight:600; }}
-  .kpi-deger {{ font-size:28px; font-weight:800; color:#14213d; margin-top:4px; }}
+  .stApp {{ background:{P['bg']}; }}
+  [data-testid="stSidebar"] {{ background:{P['panel']}; }}
+  .stApp, [data-testid="stSidebar"], h1, h2, h3, label, p, span, .stMarkdown {{ color:{P['text']}; }}
+  h1 {{ font-weight:800; }}
+  .kart {{ background:{P['panel']}; border:1px solid {P['border']}; border-radius:16px;
+          padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:8px; }}
+  .kpi-baslik {{ color:{P['muted']}; font-size:13px; font-weight:600; }}
+  .kpi-deger {{ font-size:28px; font-weight:800; color:{P['text']}; margin-top:4px; }}
   .kpi-alt {{ font-size:15px; font-weight:700; margin-top:2px; }}
   .yesil {{ color:#16a34a; }} .kirmizi {{ color:#dc2626; }}
-  .cumle {{ background:#fff; border-radius:16px; padding:20px 24px; font-size:20px;
-           color:#14213d; line-height:1.6; border-left:6px solid #16a34a; }}
+  .cumle {{ background:{P['panel']}; border-radius:16px; padding:20px 24px; font-size:20px;
+           color:{P['text']}; line-height:1.6; border-left:6px solid #16a34a; }}
   .cumle.zarar {{ border-left-color:#dc2626; }}
   {"[data-testid='stAppViewContainer'],[data-testid='stSidebar']{direction:rtl;text-align:right}" if lang=="ar" else ""}
 </style>
@@ -610,8 +621,8 @@ if hesapla:
                 line=dict(color="#9aa7bd", width=2, dash="dot"),
                 hovertemplate="%{x|%d.%m.%Y}<br>" + L["hover_index"] + ": %{y:,.0f} " + sembol + "<extra></extra>"))
             fig.update_layout(hovermode="x unified", height=450, margin=dict(l=10, r=10, t=30, b=10),
-                legend=dict(orientation="h", y=1.12), plot_bgcolor="#fff", paper_bgcolor="#fff",
-                yaxis_title=L["yaxis"] + " (" + sembol + ")")
+                legend=dict(orientation="h", y=1.12), plot_bgcolor=P["panel"], paper_bgcolor=P["panel"],
+                font=dict(color=P["text"]), yaxis_title=L["yaxis"] + " (" + sembol + ")")
             st.plotly_chart(fig, use_container_width=True)
 
             # ---------- PAYLASIM ----------
