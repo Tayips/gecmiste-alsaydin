@@ -34,7 +34,7 @@ T = {
    sort="Sırala", s_def="Varsayılan", s_up="En çok yükselen", s_down="En çok düşen", s_name="İsme göre",
    refresh="🔄 Yenile", empty="Yukarıdan takip listene hisse ekle.",
    today="Bugün", vol="Hacim", range52="52 hafta", inrange="aralığın %{p}’inde", remove="Çıkar",
-   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri", a_title="Fiyat alarmı", a_up="Üstüne çıkınca", a_down="Altına inince", a_price="Hedef fiyat", a_add="Ekle", a_reached="ulaştı", a_pending="hedef", c_alarm="Alarm", a_none="Alarm yok", src_live="🟢 Canlı fiyat: Finnhub · geçmiş: Yahoo", src_off="Fiyatlar Yahoo (gecikmeli). Canlı fiyat için Finnhub anahtarı ekle.",
+   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri", a_title="Fiyat alarmı", a_up="Üstüne çıkınca", a_down="Altına inince", a_price="Hedef fiyat", a_add="Ekle", a_reached="ulaştı", a_pending="hedef", c_alarm="Alarm", a_none="Alarm yok", src_live="🟢 Canlı fiyat: Finnhub · geçmiş: Yahoo", src_off="Fiyatlar Yahoo (gecikmeli). Canlı fiyat için Finnhub anahtarı ekle.", delayed_live="ℹ️ Canlı fiyat Finnhub; geçmiş veri Yahoo (gecikmeli olabilir). Yatırım tavsiyesi değildir.",
    c_sym="Sembol", c_name="Şirket", c_price="Fiyat", c_chg="Değişim %", c_vol="Hacim",
    c_low="52h Düşük", c_high="52h Yüksek", c_chart="Grafik",
    updated="Son güncelleme", delayed="ℹ️ Fiyatlar ~15 dk gecikmeli olabilir (Yahoo Finance). Yatırım tavsiyesi değildir.",
@@ -47,7 +47,7 @@ T = {
    sort="Sort", s_def="Default", s_up="Top gainers", s_down="Top losers", s_name="By name",
    refresh="🔄 Refresh", empty="Add stocks to your watchlist above.",
    today="Today", vol="Volume", range52="52-week", inrange="{p}% of range", remove="Remove",
-   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap", a_title="Price alert", a_up="Rises above", a_down="Falls below", a_price="Target price", a_add="Add", a_reached="reached", a_pending="target", c_alarm="Alert", a_none="No alerts", src_live="🟢 Live price: Finnhub · history: Yahoo", src_off="Prices from Yahoo (delayed). Add a Finnhub key for live prices.",
+   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap", a_title="Price alert", a_up="Rises above", a_down="Falls below", a_price="Target price", a_add="Add", a_reached="reached", a_pending="target", c_alarm="Alert", a_none="No alerts", src_live="🟢 Live price: Finnhub · history: Yahoo", src_off="Prices from Yahoo (delayed). Add a Finnhub key for live prices.", delayed_live="ℹ️ Live price from Finnhub; historical data from Yahoo (may be delayed). Not investment advice.",
    c_sym="Symbol", c_name="Company", c_price="Price", c_chg="Change %", c_vol="Volume",
    c_low="52w Low", c_high="52w High", c_chart="Chart",
    updated="Last update", delayed="ℹ️ Prices may be ~15 min delayed (Yahoo Finance). Not investment advice.",
@@ -60,7 +60,7 @@ T = {
    sort="Sortieren", s_def="Standard", s_up="Top-Gewinner", s_down="Top-Verlierer", s_name="Nach Name",
    refresh="🔄 Aktualisieren", empty="Füge oben Aktien zu deiner Watchlist hinzu.",
    today="Heute", vol="Volumen", range52="52 Wochen", inrange="{p}% der Spanne", remove="Entfernen",
-   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.", a_title="Preisalarm", a_up="Steigt über", a_down="Fällt unter", a_price="Zielpreis", a_add="Hinzufügen", a_reached="erreicht", a_pending="Ziel", c_alarm="Alarm", a_none="Keine Alarme", src_live="🟢 Live-Kurs: Finnhub · Verlauf: Yahoo", src_off="Kurse von Yahoo (verzögert). Finnhub-Key für Live-Kurse hinzufügen.",
+   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.", a_title="Preisalarm", a_up="Steigt über", a_down="Fällt unter", a_price="Zielpreis", a_add="Hinzufügen", a_reached="erreicht", a_pending="Ziel", c_alarm="Alarm", a_none="Keine Alarme", src_live="🟢 Live-Kurs: Finnhub · Verlauf: Yahoo", src_off="Kurse von Yahoo (verzögert). Finnhub-Key für Live-Kurse hinzufügen.", delayed_live="ℹ️ Live-Kurs von Finnhub; historische Daten von Yahoo (evtl. verzögert). Keine Anlageberatung.",
    c_sym="Symbol", c_name="Firma", c_price="Kurs", c_chg="Änderung %", c_vol="Volumen",
    c_low="52W Tief", c_high="52W Hoch", c_chart="Chart",
    updated="Letzte Aktualisierung", delayed="ℹ️ Kurse können ~15 Min verzögert sein (Yahoo Finance). Keine Anlageberatung.",
@@ -73,7 +73,7 @@ T = {
    sort="Сортировка", s_def="По умолчанию", s_up="Лидеры роста", s_down="Лидеры падения", s_name="По имени",
    refresh="🔄 Обновить", empty="Добавьте акции в список выше.",
    today="Сегодня", vol="Объём", range52="52 недели", inrange="{p}% диапазона", remove="Убрать",
-   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация", a_title="Ценовой алерт", a_up="Выше", a_down="Ниже", a_price="Целевая цена", a_add="Добавить", a_reached="достигнуто", a_pending="цель", c_alarm="Алерт", a_none="Нет алертов", src_live="🟢 Живая цена: Finnhub · история: Yahoo", src_off="Цены Yahoo (задержка). Добавьте ключ Finnhub для живых цен.",
+   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация", a_title="Ценовой алерт", a_up="Выше", a_down="Ниже", a_price="Целевая цена", a_add="Добавить", a_reached="достигнуто", a_pending="цель", c_alarm="Алерт", a_none="Нет алертов", src_live="🟢 Живая цена: Finnhub · история: Yahoo", src_off="Цены Yahoo (задержка). Добавьте ключ Finnhub для живых цен.", delayed_live="ℹ️ Живая цена — Finnhub; история — Yahoo (возможна задержка). Не инвестсовет.",
    c_sym="Тикер", c_name="Компания", c_price="Цена", c_chg="Изм. %", c_vol="Объём",
    c_low="52н мин", c_high="52н макс", c_chart="График",
    updated="Обновлено", delayed="ℹ️ Цены могут задерживаться ~15 мин (Yahoo Finance). Не инвестсовет.",
@@ -86,7 +86,7 @@ T = {
    sort="Ordenar", s_def="Predeterminado", s_up="Mayores subidas", s_down="Mayores bajadas", s_name="Por nombre",
    refresh="🔄 Actualizar", empty="Añade acciones a tu lista arriba.",
    today="Hoy", vol="Volumen", range52="52 semanas", inrange="{p}% del rango", remove="Quitar",
-   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado", a_title="Alerta de precio", a_up="Sube por encima", a_down="Baja por debajo", a_price="Precio objetivo", a_add="Añadir", a_reached="alcanzado", a_pending="objetivo", c_alarm="Alerta", a_none="Sin alertas", src_live="🟢 Precio en vivo: Finnhub · histórico: Yahoo", src_off="Precios de Yahoo (con retraso). Añade una clave Finnhub para precios en vivo.",
+   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado", a_title="Alerta de precio", a_up="Sube por encima", a_down="Baja por debajo", a_price="Precio objetivo", a_add="Añadir", a_reached="alcanzado", a_pending="objetivo", c_alarm="Alerta", a_none="Sin alertas", src_live="🟢 Precio en vivo: Finnhub · histórico: Yahoo", src_off="Precios de Yahoo (con retraso). Añade una clave Finnhub para precios en vivo.", delayed_live="ℹ️ Precio en vivo de Finnhub; datos históricos de Yahoo (pueden retrasarse). No es asesoramiento.",
    c_sym="Símbolo", c_name="Empresa", c_price="Precio", c_chg="Cambio %", c_vol="Volumen",
    c_low="Mín 52s", c_high="Máx 52s", c_chart="Gráfico",
    updated="Última actualización", delayed="ℹ️ Los precios pueden tener ~15 min de retraso (Yahoo Finance). No es asesoramiento.",
@@ -99,7 +99,7 @@ T = {
    sort="ترتيب", s_def="افتراضي", s_up="الأكثر ارتفاعًا", s_down="الأكثر انخفاضًا", s_name="حسب الاسم",
    refresh="🔄 تحديث", empty="أضف أسهمًا إلى قائمتك بالأعلى.",
    today="اليوم", vol="الحجم", range52="52 أسبوعًا", inrange="{p}% من النطاق", remove="إزالة",
-   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية", a_title="تنبيه سعري", a_up="يتجاوز", a_down="ينزل تحت", a_price="السعر المستهدف", a_add="إضافة", a_reached="تحقق", a_pending="الهدف", c_alarm="تنبيه", a_none="لا تنبيهات", src_live="🟢 سعر حي: Finnhub · التاريخ: Yahoo", src_off="الأسعار من Yahoo (متأخرة). أضف مفتاح Finnhub للأسعار الحية.",
+   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية", a_title="تنبيه سعري", a_up="يتجاوز", a_down="ينزل تحت", a_price="السعر المستهدف", a_add="إضافة", a_reached="تحقق", a_pending="الهدف", c_alarm="تنبيه", a_none="لا تنبيهات", src_live="🟢 سعر حي: Finnhub · التاريخ: Yahoo", src_off="الأسعار من Yahoo (متأخرة). أضف مفتاح Finnhub للأسعار الحية.", delayed_live="ℹ️ السعر الحي من Finnhub؛ البيانات التاريخية من Yahoo (قد تتأخر). ليست نصيحة استثمارية.",
    c_sym="الرمز", c_name="الشركة", c_price="السعر", c_chg="التغير %", c_vol="الحجم",
    c_low="أدنى 52أ", c_high="أعلى 52أ", c_chart="رسم",
    updated="آخر تحديث", delayed="ℹ️ قد تتأخر الأسعار ~15 دقيقة (Yahoo Finance). ليست نصيحة استثمارية.",
@@ -263,14 +263,14 @@ with st.sidebar:
     sembol = st.selectbox(L["currency"], ["€", "$", "₺"], key="k_takip_sembol")
     st.caption(L["presets"])
     hc = st.columns(3)
-    if hc[0].button(L["p_big"], use_container_width=True): uygula_hazir(HAZIR["p_big"]); st.rerun()
-    if hc[1].button(L["p_ev"], use_container_width=True): uygula_hazir(HAZIR["p_ev"]); st.rerun()
-    if hc[2].button(L["p_pop"], use_container_width=True): uygula_hazir(HAZIR["p_pop"]); st.rerun()
+    if hc[0].button(L["p_big"], width="stretch"): uygula_hazir(HAZIR["p_big"]); st.rerun()
+    if hc[1].button(L["p_ev"], width="stretch"): uygula_hazir(HAZIR["p_ev"]); st.rerun()
+    if hc[2].button(L["p_pop"], width="stretch"): uygula_hazir(HAZIR["p_pop"]); st.rerun()
     secili = st.multiselect(L["pick"], KATALOG, key="takip_ms", help=L["pick_help"])
     ekstra = st.text_input(L["extra"], key="takip_extra", help=L["extra_help"])
     gorunum = st.radio(L["view"], [L["v_card"], L["v_table"]], horizontal=True)
     sirala = st.selectbox(L["sort"], [L["s_def"], L["s_up"], L["s_down"], L["s_name"]])
-    if st.button(L["refresh"], use_container_width=True):
+    if st.button(L["refresh"], width="stretch"):
         st.cache_data.clear(); st.rerun()
 
 kodlar = [KATALOG_MAP[e] for e in secili] + [x.strip().upper() for x in ekstra.split(",") if x.strip()]
@@ -292,7 +292,7 @@ with st.sidebar.expander("🔔 " + L["a_title"]):
         ay = st.radio(L["a_title"], [">=", "<="], key="al_yon",
                       format_func=lambda y: L["a_up"] if y == ">=" else L["a_down"], horizontal=True)
         ah = st.number_input(L["a_price"], min_value=0.0, step=1.0, key="al_fiyat")
-        if st.button(L["a_add"], use_container_width=True) and ah > 0:
+        if st.button(L["a_add"], width="stretch") and ah > 0:
             st.session_state["alarmlar"][at] = (ay, ah); st.rerun()
     if st.session_state["alarmlar"]:
         for tk, (y, h) in list(st.session_state["alarmlar"].items()):
@@ -375,7 +375,7 @@ if gorunum == L["v_table"]:
         L["c_alarm"]: alarm_metni(r),
         L["c_chart"]: list(r["seri"].values),
     } for r in rows])
-    st.dataframe(df, hide_index=True, use_container_width=True, column_config={
+    st.dataframe(df, hide_index=True, width="stretch", column_config={
         L["c_price"]: st.column_config.NumberColumn(format="%.2f " + sembol),
         L["c_chg"]: st.column_config.NumberColumn(format="%+.2f%%"),
         L["pe"]: st.column_config.NumberColumn(format="%.1f"),
@@ -409,10 +409,10 @@ else:
                     f'<div class="w52">{L["range52"]}: {para(r["lo"], sembol)} – {para(r["hi"], sembol)} · '
                     f'{L["inrange"].format(p=int(r["konum"]))}</div>'
                     f'{alarm_satir}</div>', unsafe_allow_html=True)
-                if st.button("✕ " + L["remove"], key=f"rm_{r['k']}", use_container_width=True):
+                if st.button("✕ " + L["remove"], key=f"rm_{r['k']}", width="stretch"):
                     cikar(r["k"]); st.rerun()
 
 st.caption(f'{L["updated"]}: {datetime.now().strftime("%H:%M")} · {L["saved"]}')
 st.caption(L["src_live"] if FINN else L["src_off"])
 st.divider()
-st.caption(L["delayed"])
+st.caption(L["delayed_live"] if FINN else L["delayed"])
