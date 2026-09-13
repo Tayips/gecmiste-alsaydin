@@ -461,7 +461,7 @@ with st.sidebar:
     st.header(L["settings"])
     st.caption(L["try_preset"])
     for key, ayar in PRESETS:
-        if st.button(L[key], use_container_width=True):
+        if st.button(L[key], width="stretch"):
             for k, v in ayar.items():
                 st.session_state[k] = v
             st.rerun()
@@ -498,7 +498,7 @@ with st.sidebar:
     c_b, c_e = st.columns(2)
     bas = c_b.date_input(L["start"], key="k_bas", min_value=date(2000, 1, 1), max_value=BUGUN)
     bit = c_e.date_input(L["end"], key="k_bit", min_value=date(2000, 1, 2), max_value=BUGUN)
-    hesapla = st.button(L["calc"], type="primary", use_container_width=True)
+    hesapla = st.button(L["calc"], type="primary", width="stretch")
 
 # ==================== ANA ALAN ====================
 st.title(L["title"])
@@ -635,12 +635,12 @@ if hesapla:
                                           son=para(h_son, sembol))
                 p1, p2, p3 = st.columns(3)
                 p1.download_button(L["share_dl"], data=png, file_name=f"invest_{secilen}.png",
-                                   mime="image/png", use_container_width=True)
+                                   mime="image/png", width="stretch")
                 tw = "https://twitter.com/intent/tweet?" + urllib.parse.urlencode({"text": metin})
-                p2.link_button(L["share_tw"], tw, use_container_width=True)
+                p2.link_button(L["share_tw"], tw, width="stretch")
                 li = "https://www.linkedin.com/feed/?" + urllib.parse.urlencode(
                     {"shareActive": "true", "text": metin})
-                p3.link_button(L["share_li"], li, use_container_width=True)
+                p3.link_button(L["share_li"], li, width="stretch")
                 st.caption(L["share_tip"])
 else:
     st.info(L["info"])
