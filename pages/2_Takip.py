@@ -17,6 +17,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import requests
 from datetime import datetime
 
 st.set_page_config(page_title="Takip Listesi / Watchlist", page_icon="📊", layout="wide")
@@ -33,7 +34,7 @@ T = {
    sort="Sırala", s_def="Varsayılan", s_up="En çok yükselen", s_down="En çok düşen", s_name="İsme göre",
    refresh="🔄 Yenile", empty="Yukarıdan takip listene hisse ekle.",
    today="Bugün", vol="Hacim", range52="52 hafta", inrange="aralığın %{p}’inde", remove="Çıkar",
-   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri", a_title="Fiyat alarmı", a_up="Üstüne çıkınca", a_down="Altına inince", a_price="Hedef fiyat", a_add="Ekle", a_reached="ulaştı", a_pending="hedef", c_alarm="Alarm", a_none="Alarm yok",
+   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri", a_title="Fiyat alarmı", a_up="Üstüne çıkınca", a_down="Altına inince", a_price="Hedef fiyat", a_add="Ekle", a_reached="ulaştı", a_pending="hedef", c_alarm="Alarm", a_none="Alarm yok", src_live="🟢 Canlı fiyat: Finnhub · geçmiş: Yahoo", src_off="Fiyatlar Yahoo (gecikmeli). Canlı fiyat için Finnhub anahtarı ekle.",
    c_sym="Sembol", c_name="Şirket", c_price="Fiyat", c_chg="Değişim %", c_vol="Hacim",
    c_low="52h Düşük", c_high="52h Yüksek", c_chart="Grafik",
    updated="Son güncelleme", delayed="ℹ️ Fiyatlar ~15 dk gecikmeli olabilir (Yahoo Finance). Yatırım tavsiyesi değildir.",
@@ -46,7 +47,7 @@ T = {
    sort="Sort", s_def="Default", s_up="Top gainers", s_down="Top losers", s_name="By name",
    refresh="🔄 Refresh", empty="Add stocks to your watchlist above.",
    today="Today", vol="Volume", range52="52-week", inrange="{p}% of range", remove="Remove",
-   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap", a_title="Price alert", a_up="Rises above", a_down="Falls below", a_price="Target price", a_add="Add", a_reached="reached", a_pending="target", c_alarm="Alert", a_none="No alerts",
+   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap", a_title="Price alert", a_up="Rises above", a_down="Falls below", a_price="Target price", a_add="Add", a_reached="reached", a_pending="target", c_alarm="Alert", a_none="No alerts", src_live="🟢 Live price: Finnhub · history: Yahoo", src_off="Prices from Yahoo (delayed). Add a Finnhub key for live prices.",
    c_sym="Symbol", c_name="Company", c_price="Price", c_chg="Change %", c_vol="Volume",
    c_low="52w Low", c_high="52w High", c_chart="Chart",
    updated="Last update", delayed="ℹ️ Prices may be ~15 min delayed (Yahoo Finance). Not investment advice.",
@@ -59,7 +60,7 @@ T = {
    sort="Sortieren", s_def="Standard", s_up="Top-Gewinner", s_down="Top-Verlierer", s_name="Nach Name",
    refresh="🔄 Aktualisieren", empty="Füge oben Aktien zu deiner Watchlist hinzu.",
    today="Heute", vol="Volumen", range52="52 Wochen", inrange="{p}% der Spanne", remove="Entfernen",
-   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.", a_title="Preisalarm", a_up="Steigt über", a_down="Fällt unter", a_price="Zielpreis", a_add="Hinzufügen", a_reached="erreicht", a_pending="Ziel", c_alarm="Alarm", a_none="Keine Alarme",
+   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.", a_title="Preisalarm", a_up="Steigt über", a_down="Fällt unter", a_price="Zielpreis", a_add="Hinzufügen", a_reached="erreicht", a_pending="Ziel", c_alarm="Alarm", a_none="Keine Alarme", src_live="🟢 Live-Kurs: Finnhub · Verlauf: Yahoo", src_off="Kurse von Yahoo (verzögert). Finnhub-Key für Live-Kurse hinzufügen.",
    c_sym="Symbol", c_name="Firma", c_price="Kurs", c_chg="Änderung %", c_vol="Volumen",
    c_low="52W Tief", c_high="52W Hoch", c_chart="Chart",
    updated="Letzte Aktualisierung", delayed="ℹ️ Kurse können ~15 Min verzögert sein (Yahoo Finance). Keine Anlageberatung.",
@@ -72,7 +73,7 @@ T = {
    sort="Сортировка", s_def="По умолчанию", s_up="Лидеры роста", s_down="Лидеры падения", s_name="По имени",
    refresh="🔄 Обновить", empty="Добавьте акции в список выше.",
    today="Сегодня", vol="Объём", range52="52 недели", inrange="{p}% диапазона", remove="Убрать",
-   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация", a_title="Ценовой алерт", a_up="Выше", a_down="Ниже", a_price="Целевая цена", a_add="Добавить", a_reached="достигнуто", a_pending="цель", c_alarm="Алерт", a_none="Нет алертов",
+   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация", a_title="Ценовой алерт", a_up="Выше", a_down="Ниже", a_price="Целевая цена", a_add="Добавить", a_reached="достигнуто", a_pending="цель", c_alarm="Алерт", a_none="Нет алертов", src_live="🟢 Живая цена: Finnhub · история: Yahoo", src_off="Цены Yahoo (задержка). Добавьте ключ Finnhub для живых цен.",
    c_sym="Тикер", c_name="Компания", c_price="Цена", c_chg="Изм. %", c_vol="Объём",
    c_low="52н мин", c_high="52н макс", c_chart="График",
    updated="Обновлено", delayed="ℹ️ Цены могут задерживаться ~15 мин (Yahoo Finance). Не инвестсовет.",
@@ -85,7 +86,7 @@ T = {
    sort="Ordenar", s_def="Predeterminado", s_up="Mayores subidas", s_down="Mayores bajadas", s_name="Por nombre",
    refresh="🔄 Actualizar", empty="Añade acciones a tu lista arriba.",
    today="Hoy", vol="Volumen", range52="52 semanas", inrange="{p}% del rango", remove="Quitar",
-   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado", a_title="Alerta de precio", a_up="Sube por encima", a_down="Baja por debajo", a_price="Precio objetivo", a_add="Añadir", a_reached="alcanzado", a_pending="objetivo", c_alarm="Alerta", a_none="Sin alertas",
+   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado", a_title="Alerta de precio", a_up="Sube por encima", a_down="Baja por debajo", a_price="Precio objetivo", a_add="Añadir", a_reached="alcanzado", a_pending="objetivo", c_alarm="Alerta", a_none="Sin alertas", src_live="🟢 Precio en vivo: Finnhub · histórico: Yahoo", src_off="Precios de Yahoo (con retraso). Añade una clave Finnhub para precios en vivo.",
    c_sym="Símbolo", c_name="Empresa", c_price="Precio", c_chg="Cambio %", c_vol="Volumen",
    c_low="Mín 52s", c_high="Máx 52s", c_chart="Gráfico",
    updated="Última actualización", delayed="ℹ️ Los precios pueden tener ~15 min de retraso (Yahoo Finance). No es asesoramiento.",
@@ -98,7 +99,7 @@ T = {
    sort="ترتيب", s_def="افتراضي", s_up="الأكثر ارتفاعًا", s_down="الأكثر انخفاضًا", s_name="حسب الاسم",
    refresh="🔄 تحديث", empty="أضف أسهمًا إلى قائمتك بالأعلى.",
    today="اليوم", vol="الحجم", range52="52 أسبوعًا", inrange="{p}% من النطاق", remove="إزالة",
-   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية", a_title="تنبيه سعري", a_up="يتجاوز", a_down="ينزل تحت", a_price="السعر المستهدف", a_add="إضافة", a_reached="تحقق", a_pending="الهدف", c_alarm="تنبيه", a_none="لا تنبيهات",
+   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية", a_title="تنبيه سعري", a_up="يتجاوز", a_down="ينزل تحت", a_price="السعر المستهدف", a_add="إضافة", a_reached="تحقق", a_pending="الهدف", c_alarm="تنبيه", a_none="لا تنبيهات", src_live="🟢 سعر حي: Finnhub · التاريخ: Yahoo", src_off="الأسعار من Yahoo (متأخرة). أضف مفتاح Finnhub للأسعار الحية.",
    c_sym="الرمز", c_name="الشركة", c_price="السعر", c_chg="التغير %", c_vol="الحجم",
    c_low="أدنى 52أ", c_high="أعلى 52أ", c_chart="رسم",
    updated="آخر تحديث", delayed="ℹ️ قد تتأخر الأسعار ~15 دقيقة (Yahoo Finance). ليست نصيحة استثمارية.",
@@ -134,6 +135,26 @@ def cek(ticker):
     out = pd.DataFrame({"close": close})
     out["vol"] = vol if vol is not None else 0.0
     return out.dropna(subset=["close"])
+
+try:
+    FINN = st.secrets.get("FINNHUB_KEY", "")
+except Exception:
+    FINN = ""
+
+@st.cache_data(ttl=60)
+def finnhub_quote(ticker, key):
+    """Finnhub'dan canli fiyat + gunluk degisim (USD). Basarisizsa None."""
+    if not key:
+        return None
+    try:
+        r = requests.get("https://finnhub.io/api/v1/quote",
+                         params={"symbol": ticker, "token": key}, timeout=6)
+        j = r.json()
+        if j.get("c"):
+            return dict(c=float(j["c"]), d=float(j.get("d") or 0), dp=float(j.get("dp") or 0))
+    except Exception:
+        return None
+    return None
 
 @st.cache_data(ttl=3600)
 def fx(sembol):
@@ -302,10 +323,16 @@ for k in kodlar:
     s = d["close"]
     if fxs is not None:
         s = s * fxs.reindex(s.index).ffill().bfill()
-    son = float(s.iloc[-1]); onceki = float(s.iloc[-2])
-    deg = son - onceki; pct = (deg / onceki * 100) if onceki else 0
+    kur_son = float(fxs.reindex(d["close"].index).ffill().bfill().iloc[-1]) if fxs is not None else 1.0
+    # Canli fiyat (Finnhub) varsa onu kullan; yoksa Yahoo son kapanis
+    q = finnhub_quote(k, FINN)
+    if q and q["c"] > 0:
+        son = q["c"] * kur_son; deg = q["d"] * kur_son; pct = q["dp"]
+    else:
+        son = float(s.iloc[-1]); onceki = float(s.iloc[-2])
+        deg = son - onceki; pct = (deg / onceki * 100) if onceki else 0
     lo, hi = float(s.min()), float(s.max())
-    konum = (son - lo) / (hi - lo) * 100 if hi > lo else 50
+    konum = max(0, min(100, (son - lo) / (hi - lo) * 100)) if hi > lo else 50
     hac = float(d["vol"].iloc[-1]) if "vol" in d else 0.0
     pe, mc = temel(k)
     al = st.session_state["alarmlar"].get(k)
@@ -386,5 +413,6 @@ else:
                     cikar(r["k"]); st.rerun()
 
 st.caption(f'{L["updated"]}: {datetime.now().strftime("%H:%M")} · {L["saved"]}')
+st.caption(L["src_live"] if FINN else L["src_off"])
 st.divider()
 st.caption(L["delayed"])
