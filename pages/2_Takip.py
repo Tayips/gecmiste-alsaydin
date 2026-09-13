@@ -12,6 +12,7 @@ NOT: Yahoo verisi ~15 dk gecikmeli olabilir; gercek zamanli degildir.
 Egitim amaclidir; yatirim tavsiyesi degildir.
 """
 
+import re
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -32,7 +33,7 @@ T = {
    sort="Sırala", s_def="Varsayılan", s_up="En çok yükselen", s_down="En çok düşen", s_name="İsme göre",
    refresh="🔄 Yenile", empty="Yukarıdan takip listene hisse ekle.",
    today="Bugün", vol="Hacim", range52="52 hafta", inrange="aralığın %{p}’inde", remove="Çıkar",
-   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri",
+   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri", a_title="Fiyat alarmı", a_up="Üstüne çıkınca", a_down="Altına inince", a_price="Hedef fiyat", a_add="Ekle", a_reached="ulaştı", a_pending="hedef", c_alarm="Alarm", a_none="Alarm yok",
    c_sym="Sembol", c_name="Şirket", c_price="Fiyat", c_chg="Değişim %", c_vol="Hacim",
    c_low="52h Düşük", c_high="52h Yüksek", c_chart="Grafik",
    updated="Son güncelleme", delayed="ℹ️ Fiyatlar ~15 dk gecikmeli olabilir (Yahoo Finance). Yatırım tavsiyesi değildir.",
@@ -45,7 +46,7 @@ T = {
    sort="Sort", s_def="Default", s_up="Top gainers", s_down="Top losers", s_name="By name",
    refresh="🔄 Refresh", empty="Add stocks to your watchlist above.",
    today="Today", vol="Volume", range52="52-week", inrange="{p}% of range", remove="Remove",
-   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap",
+   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap", a_title="Price alert", a_up="Rises above", a_down="Falls below", a_price="Target price", a_add="Add", a_reached="reached", a_pending="target", c_alarm="Alert", a_none="No alerts",
    c_sym="Symbol", c_name="Company", c_price="Price", c_chg="Change %", c_vol="Volume",
    c_low="52w Low", c_high="52w High", c_chart="Chart",
    updated="Last update", delayed="ℹ️ Prices may be ~15 min delayed (Yahoo Finance). Not investment advice.",
@@ -58,7 +59,7 @@ T = {
    sort="Sortieren", s_def="Standard", s_up="Top-Gewinner", s_down="Top-Verlierer", s_name="Nach Name",
    refresh="🔄 Aktualisieren", empty="Füge oben Aktien zu deiner Watchlist hinzu.",
    today="Heute", vol="Volumen", range52="52 Wochen", inrange="{p}% der Spanne", remove="Entfernen",
-   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.",
+   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.", a_title="Preisalarm", a_up="Steigt über", a_down="Fällt unter", a_price="Zielpreis", a_add="Hinzufügen", a_reached="erreicht", a_pending="Ziel", c_alarm="Alarm", a_none="Keine Alarme",
    c_sym="Symbol", c_name="Firma", c_price="Kurs", c_chg="Änderung %", c_vol="Volumen",
    c_low="52W Tief", c_high="52W Hoch", c_chart="Chart",
    updated="Letzte Aktualisierung", delayed="ℹ️ Kurse können ~15 Min verzögert sein (Yahoo Finance). Keine Anlageberatung.",
@@ -71,7 +72,7 @@ T = {
    sort="Сортировка", s_def="По умолчанию", s_up="Лидеры роста", s_down="Лидеры падения", s_name="По имени",
    refresh="🔄 Обновить", empty="Добавьте акции в список выше.",
    today="Сегодня", vol="Объём", range52="52 недели", inrange="{p}% диапазона", remove="Убрать",
-   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация",
+   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация", a_title="Ценовой алерт", a_up="Выше", a_down="Ниже", a_price="Целевая цена", a_add="Добавить", a_reached="достигнуто", a_pending="цель", c_alarm="Алерт", a_none="Нет алертов",
    c_sym="Тикер", c_name="Компания", c_price="Цена", c_chg="Изм. %", c_vol="Объём",
    c_low="52н мин", c_high="52н макс", c_chart="График",
    updated="Обновлено", delayed="ℹ️ Цены могут задерживаться ~15 мин (Yahoo Finance). Не инвестсовет.",
@@ -84,7 +85,7 @@ T = {
    sort="Ordenar", s_def="Predeterminado", s_up="Mayores subidas", s_down="Mayores bajadas", s_name="Por nombre",
    refresh="🔄 Actualizar", empty="Añade acciones a tu lista arriba.",
    today="Hoy", vol="Volumen", range52="52 semanas", inrange="{p}% del rango", remove="Quitar",
-   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado",
+   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado", a_title="Alerta de precio", a_up="Sube por encima", a_down="Baja por debajo", a_price="Precio objetivo", a_add="Añadir", a_reached="alcanzado", a_pending="objetivo", c_alarm="Alerta", a_none="Sin alertas",
    c_sym="Símbolo", c_name="Empresa", c_price="Precio", c_chg="Cambio %", c_vol="Volumen",
    c_low="Mín 52s", c_high="Máx 52s", c_chart="Gráfico",
    updated="Última actualización", delayed="ℹ️ Los precios pueden tener ~15 min de retraso (Yahoo Finance). No es asesoramiento.",
@@ -97,7 +98,7 @@ T = {
    sort="ترتيب", s_def="افتراضي", s_up="الأكثر ارتفاعًا", s_down="الأكثر انخفاضًا", s_name="حسب الاسم",
    refresh="🔄 تحديث", empty="أضف أسهمًا إلى قائمتك بالأعلى.",
    today="اليوم", vol="الحجم", range52="52 أسبوعًا", inrange="{p}% من النطاق", remove="إزالة",
-   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية",
+   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية", a_title="تنبيه سعري", a_up="يتجاوز", a_down="ينزل تحت", a_price="السعر المستهدف", a_add="إضافة", a_reached="تحقق", a_pending="الهدف", c_alarm="تنبيه", a_none="لا تنبيهات",
    c_sym="الرمز", c_name="الشركة", c_price="السعر", c_chg="التغير %", c_vol="الحجم",
    c_low="أدنى 52أ", c_high="أعلى 52أ", c_chart="رسم",
    updated="آخر تحديث", delayed="ℹ️ قد تتأخر الأسعار ~15 دقيقة (Yahoo Finance). ليست نصيحة استثمارية.",
@@ -255,6 +256,33 @@ kodlar = [KATALOG_MAP[e] for e in secili] + [x.strip().upper() for x in ekstra.s
 gor = set(); kodlar = [k for k in kodlar if k and not (k in gor or gor.add(k))][:20]
 st.query_params["takip"] = ",".join(kodlar)
 
+# ---------- Fiyat alarmlari (URL'de saklanir) ----------
+def _parse_alarm(txt):
+    d = {}
+    for p in txt.split("|"):
+        m = re.match(r"([A-Za-z0-9.\-]+)(>=|<=)([0-9.]+)$", p)
+        if m: d[m.group(1).upper()] = (m.group(2), float(m.group(3)))
+    return d
+st.session_state.setdefault("alarmlar", _parse_alarm(st.query_params.get("alarm", "")))
+
+with st.sidebar.expander("🔔 " + L["a_title"]):
+    if kodlar:
+        at = st.selectbox(L["c_sym"], kodlar, key="al_sym")
+        ay = st.radio(L["a_title"], [">=", "<="], key="al_yon",
+                      format_func=lambda y: L["a_up"] if y == ">=" else L["a_down"], horizontal=True)
+        ah = st.number_input(L["a_price"], min_value=0.0, step=1.0, key="al_fiyat")
+        if st.button(L["a_add"], use_container_width=True) and ah > 0:
+            st.session_state["alarmlar"][at] = (ay, ah); st.rerun()
+    if st.session_state["alarmlar"]:
+        for tk, (y, h) in list(st.session_state["alarmlar"].items()):
+            c = st.columns([4, 1])
+            c[0].caption(f"{tk} {y} {h:g}")
+            if c[1].button("✕", key=f"aldel_{tk}"):
+                del st.session_state["alarmlar"][tk]; st.rerun()
+    else:
+        st.caption(L["a_none"])
+st.query_params["alarm"] = "|".join(f"{t}{y}{h:g}" for t, (y, h) in st.session_state["alarmlar"].items())
+
 st.title(L["title"])
 st.caption(L["intro"])
 
@@ -280,8 +308,10 @@ for k in kodlar:
     konum = (son - lo) / (hi - lo) * 100 if hi > lo else 50
     hac = float(d["vol"].iloc[-1]) if "vol" in d else 0.0
     pe, mc = temel(k)
+    al = st.session_state["alarmlar"].get(k)
+    tetik = bool(al) and ((son >= al[1]) if al[0] == ">=" else (son <= al[1]))
     rows.append(dict(k=k, ad=POPULER.get(k, k), son=son, deg=deg, pct=pct, lo=lo, hi=hi,
-                     konum=konum, hac=hac, seri=s.tail(22), pe=pe, mc=mc))
+                     konum=konum, hac=hac, seri=s.tail(22), pe=pe, mc=mc, al=al, tetik=tetik))
 
 # Siralama
 if sirala == L["s_up"]:
@@ -305,12 +335,17 @@ if rows:
 
 # ---------- Gorunum ----------
 if gorunum == L["v_table"]:
+    def alarm_metni(r):
+        if not r["al"]: return ""
+        y, h = r["al"]
+        return (f"🎯 {L['a_reached']} {h:g}" if r["tetik"] else f"🔔 {y}{h:g}")
     df = pd.DataFrame([{
         L["c_sym"]: r["k"], L["c_name"]: r["ad"], L["c_price"]: r["son"],
         L["c_chg"]: r["pct"], L["pe"]: (round(r["pe"], 1) if r["pe"] else None),
         L["mcap"]: ("$" + buyuk(r["mc"]) if r["mc"] else "—"),
         L["c_vol"]: hacim(r["hac"]),
         L["c_low"]: r["lo"], L["c_high"]: r["hi"],
+        L["c_alarm"]: alarm_metni(r),
         L["c_chart"]: list(r["seri"].values),
     } for r in rows])
     st.dataframe(df, hide_index=True, use_container_width=True, column_config={
@@ -328,8 +363,17 @@ else:
             with satir[j]:
                 renk = "#16a34a" if r["deg"] >= 0 else "#dc2626"
                 sinif = "yesil" if r["deg"] >= 0 else "kirmizi"
+                vurgu = ('style="border:2px solid #f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25)"'
+                         if r["tetik"] else "")
+                if r["al"]:
+                    y, h = r["al"]
+                    alarm_satir = (f'<div class="w52" style="color:#f59e0b;font-weight:700">'
+                                   f'🎯 {L["a_reached"]} ({h:g})</div>' if r["tetik"]
+                                   else f'<div class="w52">🔔 {L["a_pending"]}: {y}{h:g}</div>')
+                else:
+                    alarm_satir = ""
                 st.markdown(
-                    f'<div class="wkart"><div class="wad">{r["ad"]} · {r["k"]}</div>'
+                    f'<div class="wkart" {vurgu}><div class="wad">{r["ad"]} · {r["k"]}</div>'
                     f'<div class="wfiyat">{para(r["son"], sembol)}</div>'
                     f'<div class="wdeg {sinif}">{para(r["deg"], sembol)} ({r["pct"]:+.2f}%) · {L["today"]}</div>'
                     f'{sparkline(r["seri"], renk)}'
@@ -337,7 +381,7 @@ else:
                     f'{L["mcap"]}: {("$"+buyuk(r["mc"])) if r["mc"] else "—"} · {L["vol"]}: {hacim(r["hac"])}</div>'
                     f'<div class="w52">{L["range52"]}: {para(r["lo"], sembol)} – {para(r["hi"], sembol)} · '
                     f'{L["inrange"].format(p=int(r["konum"]))}</div>'
-                    f'</div>', unsafe_allow_html=True)
+                    f'{alarm_satir}</div>', unsafe_allow_html=True)
                 if st.button("✕ " + L["remove"], key=f"rm_{r['k']}", use_container_width=True):
                     cikar(r["k"]); st.rerun()
 
