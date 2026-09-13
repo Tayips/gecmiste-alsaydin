@@ -165,21 +165,34 @@ def sparkline(seri, renk, w=150, h=34):
 
 # ---------- Dil ----------
 dil_ad = st.session_state.get("k_lang", "Türkçe")
+DARK_LBL = {"tr":"🌙 Karanlık mod","en":"🌙 Dark mode","de":"🌙 Dunkelmodus",
+            "ru":"🌙 Тёмная тема","es":"🌙 Modo oscuro","ar":"🌙 الوضع الداكن"}
+def palet(koyu):
+    if koyu:
+        return dict(bg="#0f1420", panel="#1a2233", border="#2a3550", text="#e8eaed",
+                    muted="#9aa7bd", kpi="#0b1626")
+    return dict(bg="#f7f9fc", panel="#ffffff", border="#e6eaf0", text="#14213d",
+                muted="#6b7280", kpi="#14213d")
+
 with st.sidebar:
     dil_ad = st.selectbox("🌐 Language / Dil", list(DILLER.keys()),
                           index=list(DILLER.keys()).index(dil_ad) if dil_ad in DILLER else 0, key="k_lang")
 lang = DILLER.get(dil_ad, "tr"); L = T[lang]
+koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
+P = palet(koyu)
 
 st.markdown(f"""
 <style>
-  .stApp {{ background:#f7f9fc; }}
-  .wkart {{ background:#fff; border:1px solid #e6eaf0; border-radius:16px; padding:16px 18px;
-           box-shadow:0 1px 3px rgba(20,33,61,.06); margin-bottom:6px; }}
-  .wad {{ color:#6b7280; font-size:13px; font-weight:600; }}
-  .wfiyat {{ font-size:26px; font-weight:800; color:#14213d; margin-top:2px; }}
+  .stApp {{ background:{P['bg']}; }}
+  [data-testid="stSidebar"] {{ background:{P['panel']}; }}
+  .stApp, [data-testid="stSidebar"], h1, h2, h3, label, p, span, .stMarkdown {{ color:{P['text']}; }}
+  .wkart {{ background:{P['panel']}; border:1px solid {P['border']}; border-radius:16px; padding:16px 18px;
+           box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:6px; }}
+  .wad {{ color:{P['muted']}; font-size:13px; font-weight:600; }}
+  .wfiyat {{ font-size:26px; font-weight:800; color:{P['text']}; margin-top:2px; }}
   .wdeg {{ font-size:15px; font-weight:700; }} .yesil {{ color:#16a34a; }} .kirmizi {{ color:#dc2626; }}
-  .w52 {{ color:#6b7280; font-size:12px; margin-top:6px; }}
-  .kpi {{ background:#14213d; color:#fff; border-radius:14px; padding:14px 18px; }}
+  .w52 {{ color:{P['muted']}; font-size:12px; margin-top:6px; }}
+  .kpi {{ background:{P['kpi']}; color:#fff; border-radius:14px; padding:14px 18px; }}
   .kpi small {{ color:#9aa7bd; font-size:12px; }} .kpi b {{ font-size:22px; }}
   {"[data-testid='stAppViewContainer'],[data-testid='stSidebar']{direction:rtl;text-align:right}" if lang=="ar" else ""}
 </style>
