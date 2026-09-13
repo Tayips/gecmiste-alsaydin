@@ -32,7 +32,7 @@ T = {
    sort="Sırala", s_def="Varsayılan", s_up="En çok yükselen", s_down="En çok düşen", s_name="İsme göre",
    refresh="🔄 Yenile", empty="Yukarıdan takip listene hisse ekle.",
    today="Bugün", vol="Hacim", range52="52 hafta", inrange="aralığın %{p}’inde", remove="Çıkar",
-   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse",
+   port="Portföy özeti", avg="Ortalama günlük", best="En iyi", worst="En kötü", count="Hisse", pe="F/K", mcap="Piyasa değeri",
    c_sym="Sembol", c_name="Şirket", c_price="Fiyat", c_chg="Değişim %", c_vol="Hacim",
    c_low="52h Düşük", c_high="52h Yüksek", c_chart="Grafik",
    updated="Son güncelleme", delayed="ℹ️ Fiyatlar ~15 dk gecikmeli olabilir (Yahoo Finance). Yatırım tavsiyesi değildir.",
@@ -45,7 +45,7 @@ T = {
    sort="Sort", s_def="Default", s_up="Top gainers", s_down="Top losers", s_name="By name",
    refresh="🔄 Refresh", empty="Add stocks to your watchlist above.",
    today="Today", vol="Volume", range52="52-week", inrange="{p}% of range", remove="Remove",
-   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks",
+   port="Portfolio summary", avg="Avg daily", best="Best", worst="Worst", count="Stocks", pe="P/E", mcap="Market cap",
    c_sym="Symbol", c_name="Company", c_price="Price", c_chg="Change %", c_vol="Volume",
    c_low="52w Low", c_high="52w High", c_chart="Chart",
    updated="Last update", delayed="ℹ️ Prices may be ~15 min delayed (Yahoo Finance). Not investment advice.",
@@ -58,7 +58,7 @@ T = {
    sort="Sortieren", s_def="Standard", s_up="Top-Gewinner", s_down="Top-Verlierer", s_name="Nach Name",
    refresh="🔄 Aktualisieren", empty="Füge oben Aktien zu deiner Watchlist hinzu.",
    today="Heute", vol="Volumen", range52="52 Wochen", inrange="{p}% der Spanne", remove="Entfernen",
-   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien",
+   port="Portfolio-Übersicht", avg="Ø täglich", best="Beste", worst="Schlechteste", count="Aktien", pe="KGV", mcap="Marktkap.",
    c_sym="Symbol", c_name="Firma", c_price="Kurs", c_chg="Änderung %", c_vol="Volumen",
    c_low="52W Tief", c_high="52W Hoch", c_chart="Chart",
    updated="Letzte Aktualisierung", delayed="ℹ️ Kurse können ~15 Min verzögert sein (Yahoo Finance). Keine Anlageberatung.",
@@ -71,7 +71,7 @@ T = {
    sort="Сортировка", s_def="По умолчанию", s_up="Лидеры роста", s_down="Лидеры падения", s_name="По имени",
    refresh="🔄 Обновить", empty="Добавьте акции в список выше.",
    today="Сегодня", vol="Объём", range52="52 недели", inrange="{p}% диапазона", remove="Убрать",
-   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции",
+   port="Сводка портфеля", avg="Средн. за день", best="Лучшая", worst="Худшая", count="Акции", pe="P/E", mcap="Капитализация",
    c_sym="Тикер", c_name="Компания", c_price="Цена", c_chg="Изм. %", c_vol="Объём",
    c_low="52н мин", c_high="52н макс", c_chart="График",
    updated="Обновлено", delayed="ℹ️ Цены могут задерживаться ~15 мин (Yahoo Finance). Не инвестсовет.",
@@ -84,7 +84,7 @@ T = {
    sort="Ordenar", s_def="Predeterminado", s_up="Mayores subidas", s_down="Mayores bajadas", s_name="Por nombre",
    refresh="🔄 Actualizar", empty="Añade acciones a tu lista arriba.",
    today="Hoy", vol="Volumen", range52="52 semanas", inrange="{p}% del rango", remove="Quitar",
-   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones",
+   port="Resumen de cartera", avg="Media diaria", best="Mejor", worst="Peor", count="Acciones", pe="PER", mcap="Cap. mercado",
    c_sym="Símbolo", c_name="Empresa", c_price="Precio", c_chg="Cambio %", c_vol="Volumen",
    c_low="Mín 52s", c_high="Máx 52s", c_chart="Gráfico",
    updated="Última actualización", delayed="ℹ️ Los precios pueden tener ~15 min de retraso (Yahoo Finance). No es asesoramiento.",
@@ -97,7 +97,7 @@ T = {
    sort="ترتيب", s_def="افتراضي", s_up="الأكثر ارتفاعًا", s_down="الأكثر انخفاضًا", s_name="حسب الاسم",
    refresh="🔄 تحديث", empty="أضف أسهمًا إلى قائمتك بالأعلى.",
    today="اليوم", vol="الحجم", range52="52 أسبوعًا", inrange="{p}% من النطاق", remove="إزالة",
-   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم",
+   port="ملخص المحفظة", avg="متوسط يومي", best="الأفضل", worst="الأسوأ", count="أسهم", pe="مكرر الربح", mcap="القيمة السوقية",
    c_sym="الرمز", c_name="الشركة", c_price="السعر", c_chg="التغير %", c_vol="الحجم",
    c_low="أدنى 52أ", c_high="أعلى 52أ", c_chart="رسم",
    updated="آخر تحديث", delayed="ℹ️ قد تتأخر الأسعار ~15 دقيقة (Yahoo Finance). ليست نصيحة استثمارية.",
@@ -154,6 +154,22 @@ def hacim(v):
         if v >= b: return f"{v/b:.1f}{birim}"
     return f"{v:.0f}"
 
+def buyuk(v):
+    for birim, b in [("T", 1e12), ("B", 1e9), ("M", 1e6)]:
+        if v >= b: return f"{v/b:.2f}{birim}"
+    return f"{v:.0f}"
+
+@st.cache_data(ttl=86400)
+def temel(ticker):
+    """F/K ve Piyasa Degeri (USD). Yavas/eksik olabilir; alinamazsa (None,None)."""
+    try:
+        info = yf.Ticker(ticker).info
+        pe = info.get("trailingPE")
+        mc = info.get("marketCap")
+        return (float(pe) if pe else None, float(mc) if mc else None)
+    except Exception:
+        return (None, None)
+
 def sparkline(seri, renk, w=150, h=34):
     v = seri.values.astype(float)
     if len(v) > 60: v = v[:: max(1, len(v)//60)]
@@ -180,9 +196,13 @@ with st.sidebar:
 lang = DILLER.get(dil_ad, "tr"); L = T[lang]
 koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
 P = palet(koyu)
+btn_css = (f'.stDownloadButton button, [data-testid="stLinkButton"] a, .stButton button '
+           f'{{ background:{P["panel"]}; color:{P["text"]}; border:1px solid {P["border"]}; }}'
+           if koyu else "")
 
 st.markdown(f"""
 <style>
+  {btn_css}
   .stApp {{ background:{P['bg']}; }}
   [data-testid="stSidebar"] {{ background:{P['panel']}; }}
   .stApp, [data-testid="stSidebar"], h1, h2, h3, label, p, span, .stMarkdown {{ color:{P['text']}; }}
@@ -259,8 +279,9 @@ for k in kodlar:
     lo, hi = float(s.min()), float(s.max())
     konum = (son - lo) / (hi - lo) * 100 if hi > lo else 50
     hac = float(d["vol"].iloc[-1]) if "vol" in d else 0.0
+    pe, mc = temel(k)
     rows.append(dict(k=k, ad=POPULER.get(k, k), son=son, deg=deg, pct=pct, lo=lo, hi=hi,
-                     konum=konum, hac=hac, seri=s.tail(22)))
+                     konum=konum, hac=hac, seri=s.tail(22), pe=pe, mc=mc))
 
 # Siralama
 if sirala == L["s_up"]:
@@ -286,13 +307,16 @@ if rows:
 if gorunum == L["v_table"]:
     df = pd.DataFrame([{
         L["c_sym"]: r["k"], L["c_name"]: r["ad"], L["c_price"]: r["son"],
-        L["c_chg"]: r["pct"], L["c_vol"]: hacim(r["hac"]),
+        L["c_chg"]: r["pct"], L["pe"]: (round(r["pe"], 1) if r["pe"] else None),
+        L["mcap"]: ("$" + buyuk(r["mc"]) if r["mc"] else "—"),
+        L["c_vol"]: hacim(r["hac"]),
         L["c_low"]: r["lo"], L["c_high"]: r["hi"],
         L["c_chart"]: list(r["seri"].values),
     } for r in rows])
     st.dataframe(df, hide_index=True, use_container_width=True, column_config={
         L["c_price"]: st.column_config.NumberColumn(format="%.2f " + sembol),
         L["c_chg"]: st.column_config.NumberColumn(format="%+.2f%%"),
+        L["pe"]: st.column_config.NumberColumn(format="%.1f"),
         L["c_low"]: st.column_config.NumberColumn(format="%.2f"),
         L["c_high"]: st.column_config.NumberColumn(format="%.2f"),
         L["c_chart"]: st.column_config.LineChartColumn(width="medium"),
@@ -309,8 +333,10 @@ else:
                     f'<div class="wfiyat">{para(r["son"], sembol)}</div>'
                     f'<div class="wdeg {sinif}">{para(r["deg"], sembol)} ({r["pct"]:+.2f}%) · {L["today"]}</div>'
                     f'{sparkline(r["seri"], renk)}'
-                    f'<div class="w52">{L["vol"]}: {hacim(r["hac"])} · {L["range52"]}: '
-                    f'{para(r["lo"], sembol)} – {para(r["hi"], sembol)} · {L["inrange"].format(p=int(r["konum"]))}</div>'
+                    f'<div class="w52">{L["pe"]}: {round(r["pe"],1) if r["pe"] else "—"} · '
+                    f'{L["mcap"]}: {("$"+buyuk(r["mc"])) if r["mc"] else "—"} · {L["vol"]}: {hacim(r["hac"])}</div>'
+                    f'<div class="w52">{L["range52"]}: {para(r["lo"], sembol)} – {para(r["hi"], sembol)} · '
+                    f'{L["inrange"].format(p=int(r["konum"]))}</div>'
                     f'</div>', unsafe_allow_html=True)
                 if st.button("✕ " + L["remove"], key=f"rm_{r['k']}", use_container_width=True):
                     cikar(r["k"]); st.rerun()
