@@ -4,3 +4,4 @@ pandas
 curl_cffi
 plotly
 matplotlib
+psycopg2-binary
