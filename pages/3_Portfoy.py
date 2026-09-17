@@ -10,6 +10,7 @@ Canli fiyat: Finnhub · gecmis/yedek: Yahoo. Egitim amaclidir; yatirim tavsiyesi
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import plotly.express as px
 import requests
 from datetime import datetime
 import db
@@ -195,6 +196,22 @@ m2.metric("Toplam maliyet", para(toplam_maliyet, sembol))
 m3.metric("Kâr / Zarar", para(toplam_kz, sembol), f"{toplam_kz_pct:+.2f}%")
 m4.metric("Pozisyon sayısı", str(len(pozisyonlar)))
 st.divider()
+
+# ---------- Dagilim pastasi ----------
+pasta = [(ADLAR.get(s["p"]["ticker"], s["p"]["ticker"]), s["deger"])
+         for s in satirlar if s["fiyat"] is not None and s["deger"] > 0]
+if pasta:
+    isimler = [x[0] for x in pasta]
+    degerler = [x[1] for x in pasta]
+    fig = px.pie(names=isimler, values=degerler, hole=0.45)
+    fig.update_traces(textposition="inside", textinfo="percent+label",
+                      hovertemplate="%{label}<br>%{value:,.2f} " + sembol +
+                                    "<br>%{percent}<extra></extra>")
+    fig.update_layout(showlegend=True, height=380,
+                      margin=dict(t=30, b=10, l=10, r=10),
+                      title="Portföy dağılımı (güncel değere göre)")
+    st.plotly_chart(fig, width="stretch")
+    st.divider()
 
 # ---------- Pozisyon karti listesi ----------
 for s in satirlar:
