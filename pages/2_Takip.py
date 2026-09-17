@@ -19,8 +19,19 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime
+import db  # ortak veritabani yardimcisi (repo ana klasorunde db.py)
 
 st.set_page_config(page_title="Takip Listesi / Watchlist", page_icon="📊", layout="wide")
+
+# ---------- Giris zorunlu (kim oldugunu bilmemiz gerek) ----------
+_u = getattr(st, "user", None)
+if not _u or not _u.is_logged_in:
+    st.title("📊 Takip Listesi")
+    st.info("Takip listeni kaydedebilmek için önce Google ile giriş yapmalısın.")
+    if st.button("Google ile giriş yap", type="primary"):
+        st.login()
+    st.stop()
+EMAIL = st.user.email
 
 DILLER = {"Türkçe": "tr", "English": "en", "Deutsch": "de",
           "Русский": "ru", "Español": "es", "العربية": "ar"}
@@ -240,11 +251,12 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Liste durumu (URL'den ilk yukleme) ----------
-qp = st.query_params.get("takip", "")
-url_kodlar = [c.strip().upper() for c in qp.split(",") if c.strip()] or ["AAPL", "MSFT", "NVDA"]
-st.session_state.setdefault("takip_ms", [f"{POPULER[c]} ({c})" for c in url_kodlar if c in POPULER])
-st.session_state.setdefault("takip_extra", ", ".join([c for c in url_kodlar if c not in POPULER]))
+# ---------- Liste durumu (veritabanindan ilk yukleme) ----------
+if "takip_loaded" not in st.session_state:
+    db_kodlar = db.takip_getir(EMAIL) or ["AAPL", "MSFT", "NVDA"]
+    st.session_state["takip_ms"] = [f"{POPULER[c]} ({c})" for c in db_kodlar if c in POPULER]
+    st.session_state["takip_extra"] = ", ".join([c for c in db_kodlar if c not in POPULER])
+    st.session_state["takip_loaded"] = True
 
 def uygula_hazir(kodlar):
     st.session_state["takip_ms"] = [f"{POPULER[c]} ({c})" for c in kodlar if c in POPULER]
@@ -260,6 +272,10 @@ def cikar(kod):
 
 # ---------- Sidebar kontrolleri ----------
 with st.sidebar:
+    st.caption(f"👤 {EMAIL}")
+    if st.button("Çıkış yap", width="stretch"):
+        st.logout()
+    st.divider()
     sembol = st.selectbox(L["currency"], ["€", "$", "₺"], key="k_takip_sembol")
     st.caption(L["presets"])
     hc = st.columns(3)
@@ -275,7 +291,13 @@ with st.sidebar:
 
 kodlar = [KATALOG_MAP[e] for e in secili] + [x.strip().upper() for x in ekstra.split(",") if x.strip()]
 gor = set(); kodlar = [k for k in kodlar if k and not (k in gor or gor.add(k))][:20]
-st.query_params["takip"] = ",".join(kodlar)
+# Liste degistiyse veritabanina kaydet
+if st.session_state.get("takip_saved") != kodlar:
+    try:
+        db.takip_kaydet(EMAIL, kodlar)
+        st.session_state["takip_saved"] = list(kodlar)
+    except Exception as e:
+        st.warning("Takip listesi kaydedilemedi: " + str(e))
 
 # ---------- Fiyat alarmlari (URL'de saklanir) ----------
 def _parse_alarm(txt):
@@ -284,7 +306,9 @@ def _parse_alarm(txt):
         m = re.match(r"([A-Za-z0-9.\-]+)(>=|<=)([0-9.]+)$", p)
         if m: d[m.group(1).upper()] = (m.group(2), float(m.group(3)))
     return d
-st.session_state.setdefault("alarmlar", _parse_alarm(st.query_params.get("alarm", "")))
+if "alarm_loaded" not in st.session_state:
+    st.session_state["alarmlar"] = db.alarm_getir(EMAIL)
+    st.session_state["alarm_loaded"] = True
 
 with st.sidebar.expander("🔔 " + L["a_title"]):
     if kodlar:
@@ -302,7 +326,13 @@ with st.sidebar.expander("🔔 " + L["a_title"]):
                 del st.session_state["alarmlar"][tk]; st.rerun()
     else:
         st.caption(L["a_none"])
-st.query_params["alarm"] = "|".join(f"{t}{y}{h:g}" for t, (y, h) in st.session_state["alarmlar"].items())
+# Alarmlar degistiyse veritabanina kaydet
+if st.session_state.get("alarm_saved") != st.session_state["alarmlar"]:
+    try:
+        db.alarm_kaydet(EMAIL, st.session_state["alarmlar"])
+        st.session_state["alarm_saved"] = dict(st.session_state["alarmlar"])
+    except Exception as e:
+        st.warning("Alarmlar kaydedilemedi: " + str(e))
 
 st.title(L["title"])
 st.caption(L["intro"])
@@ -412,7 +442,7 @@ else:
                 if st.button("✕ " + L["remove"], key=f"rm_{r['k']}", width="stretch"):
                     cikar(r["k"]); st.rerun()
 
-st.caption(f'{L["updated"]}: {datetime.now().strftime("%H:%M")} · {L["saved"]}')
+st.caption(f'{L["updated"]}: {datetime.now().strftime("%H:%M")} · ✅ {EMAIL} hesabına kaydedildi')
 st.caption(L["src_live"] if FINN else L["src_off"])
 st.divider()
 st.caption(L["delayed_live"] if FINN else L["delayed"])
