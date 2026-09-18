@@ -1,0 +1,32 @@
+name: Fiyat Alarmlari
+
+# Her 15 dakikada bir calisir + istersen elle de calistirilabilir.
+# NOT: GitHub Actions cron zamani biraz gecikebilir (birkac dakika), bu normaldir.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  alarm-kontrol:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kutuphaneleri yukle
+        run: pip install -r worker/requirements.txt
+
+      - name: Alarmlari kontrol et
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python worker/check_alarms.py
