@@ -67,11 +67,48 @@ def alarm_getir(email):
 
 
 def alarm_kaydet(email, alarmlar):
-    """Alarmlari komple gunceller. alarmlar: {ticker: (yon, hedef)}."""
-    _run("delete from alarm where email=%s", (email,))
-    if alarmlar:
-        _run("insert into alarm(email, ticker, yon, hedef) values(%s, %s, %s, %s)",
-             [(email, t, y, float(h)) for t, (y, h) in alarmlar.items()], cok=True)
+    """
+    Alarmlari gunceller ama 'gonderildi' bayragini korur (arka plan iscisi yonetir).
+    Listede olmayanlar silinir; hedef/yon degisirse gonderildi sifirlanir.
+    alarmlar: {ticker: (yon, hedef)}.
+    """
+    tickerlar = list(alarmlar.keys())
+    if tickerlar:
+        _run("delete from alarm where email=%s and not (ticker = any(%s))", (email, tickerlar))
+    else:
+        _run("delete from alarm where email=%s", (email,))
+    for t, (y, h) in alarmlar.items():
+        _run("""insert into alarm(email, ticker, yon, hedef) values(%s, %s, %s, %s)
+                on conflict (email, ticker) do update
+                  set yon = excluded.yon,
+                      hedef = excluded.hedef,
+                      gonderildi = case
+                        when alarm.yon <> excluded.yon or alarm.hedef <> excluded.hedef
+                        then false else alarm.gonderildi end""",
+             (email, t, y, float(h)))
+
+
+# ---------------- BILDIRIM AYARLARI ----------------
+def bildirim_getir(email):
+    """Kullanicinin bildirim ayarlarini dondurur (yoksa None)."""
+    satirlar = _run(
+        "select telegram_chat_id, telegram_aktif, eposta_aktif from bildirim where email=%s",
+        (email,), getir=True)
+    if not satirlar:
+        return None
+    r = satirlar[0]
+    return dict(telegram_chat_id=r[0], telegram_aktif=r[1], eposta_aktif=r[2])
+
+
+def bildirim_kaydet(email, chat_id, telegram_aktif, eposta_aktif):
+    """Bildirim ayarlarini ekler/gunceller."""
+    _run("""insert into bildirim(email, telegram_chat_id, telegram_aktif, eposta_aktif)
+            values(%s, %s, %s, %s)
+            on conflict (email) do update
+              set telegram_chat_id = excluded.telegram_chat_id,
+                  telegram_aktif = excluded.telegram_aktif,
+                  eposta_aktif = excluded.eposta_aktif""",
+         (email, chat_id or None, bool(telegram_aktif), bool(eposta_aktif)))
 
 
 # ---------------- PORTFOY ----------------
