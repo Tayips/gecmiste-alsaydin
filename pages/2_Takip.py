@@ -315,7 +315,8 @@ with st.sidebar.expander("🔔 " + L["a_title"]):
         at = st.selectbox(L["c_sym"], kodlar, key="al_sym")
         ay = st.radio(L["a_title"], [">=", "<="], key="al_yon",
                       format_func=lambda y: L["a_up"] if y == ">=" else L["a_down"], horizontal=True)
-        ah = st.number_input(L["a_price"], min_value=0.0, step=1.0, key="al_fiyat")
+        ah = st.number_input(L["a_price"] + " (USD)", min_value=0.0, step=1.0, key="al_fiyat",
+                             help="Hedef fiyatı USD olarak gir. Bildirim, fiyat bu USD seviyesini geçince gelir.")
         if st.button(L["a_add"], width="stretch") and ah > 0:
             st.session_state["alarmlar"][at] = (ay, ah); st.rerun()
     if st.session_state["alarmlar"]:
@@ -333,6 +334,33 @@ if st.session_state.get("alarm_saved") != st.session_state["alarmlar"]:
         st.session_state["alarm_saved"] = dict(st.session_state["alarmlar"])
     except Exception as e:
         st.warning("Alarmlar kaydedilemedi: " + str(e))
+
+# ---------- Bildirim ayarlari (Telegram + e-posta) ----------
+if "bildirim_loaded" not in st.session_state:
+    try:
+        b = db.bildirim_getir(EMAIL)
+    except Exception:
+        b = None
+    st.session_state["b_chat"] = (b or {}).get("telegram_chat_id", "") or ""
+    st.session_state["b_tg"] = bool((b or {}).get("telegram_aktif", True))
+    st.session_state["b_mail"] = bool((b or {}).get("eposta_aktif", True))
+    st.session_state["bildirim_loaded"] = True
+
+with st.sidebar.expander("📣 Bildirim ayarları"):
+    st.caption("Alarm tetiklenince (uygulama kapalı olsa bile) sana haber gelir.")
+    chat = st.text_input("Telegram Chat ID", value=st.session_state["b_chat"],
+                         help="Kendi bot'undan getUpdates ile aldığın sayısal ID.")
+    tg = st.checkbox("Telegram bildirimi", value=st.session_state["b_tg"])
+    ml = st.checkbox(f"E-posta bildirimi ({EMAIL})", value=st.session_state["b_mail"])
+    if st.button("Ayarları kaydet", width="stretch"):
+        try:
+            db.bildirim_kaydet(EMAIL, chat.strip(), tg, ml)
+            st.session_state["b_chat"] = chat.strip()
+            st.session_state["b_tg"] = tg
+            st.session_state["b_mail"] = ml
+            st.success("✅ Bildirim ayarları kaydedildi.")
+        except Exception as e:
+            st.error("Kaydedilemedi: " + str(e))
 
 st.title(L["title"])
 st.caption(L["intro"])
@@ -365,8 +393,10 @@ for k in kodlar:
     konum = max(0, min(100, (son - lo) / (hi - lo) * 100)) if hi > lo else 50
     hac = float(d["vol"].iloc[-1]) if "vol" in d else 0.0
     pe, mc = temel(k)
+    # Alarm her zaman USD fiyat uzerinden kontrol edilir (arka plan iscisi ile ayni)
+    son_usd = q["c"] if (q and q["c"] > 0) else float(d["close"].iloc[-1])
     al = st.session_state["alarmlar"].get(k)
-    tetik = bool(al) and ((son >= al[1]) if al[0] == ">=" else (son <= al[1]))
+    tetik = bool(al) and ((son_usd >= al[1]) if al[0] == ">=" else (son_usd <= al[1]))
     rows.append(dict(k=k, ad=POPULER.get(k, k), son=son, deg=deg, pct=pct, lo=lo, hi=hi,
                      konum=konum, hac=hac, seri=s.tail(22), pe=pe, mc=mc, al=al, tetik=tetik))
 
