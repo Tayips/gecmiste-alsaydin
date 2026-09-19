@@ -33,7 +33,7 @@ except Exception:
 
 # Marka logosu (sol menu ustu + her sayfada)
 try:
-    st.logo("assets/logo_lockup.png", icon_image="assets/favicon.png")
+    st.logo("assets/logo_lockup.png", size="large", icon_image="assets/favicon.png")
 except Exception:
     pass
 
