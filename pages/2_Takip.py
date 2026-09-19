@@ -21,7 +21,14 @@ import requests
 from datetime import datetime
 import db  # ortak veritabani yardimcisi (repo ana klasorunde db.py)
 
-st.set_page_config(page_title="Takip Listesi / Watchlist", page_icon="📊", layout="wide")
+try:
+    st.set_page_config(page_title="Takip Listesi — WhatIfInvest", page_icon="assets/favicon.png", layout="wide")
+except Exception:
+    st.set_page_config(page_title="Takip Listesi — WhatIfInvest", page_icon="📊", layout="wide")
+try:
+    st.logo("assets/logo_lockup.png", icon_image="assets/favicon.png")
+except Exception:
+    pass
 
 # ---------- Giris zorunlu (kim oldugunu bilmemiz gerek) ----------
 _u = getattr(st, "user", None)

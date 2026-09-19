@@ -15,7 +15,14 @@ import requests
 from datetime import datetime
 import db
 
-st.set_page_config(page_title="Portföyüm / My Portfolio", page_icon="💼", layout="wide")
+try:
+    st.set_page_config(page_title="Portföyüm — WhatIfInvest", page_icon="assets/favicon.png", layout="wide")
+except Exception:
+    st.set_page_config(page_title="Portföyüm — WhatIfInvest", page_icon="💼", layout="wide")
+try:
+    st.logo("assets/logo_lockup.png", icon_image="assets/favicon.png")
+except Exception:
+    pass
 
 # ---------- Giris zorunlu ----------
 _u = getattr(st, "user", None)
