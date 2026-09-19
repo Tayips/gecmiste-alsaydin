@@ -130,3 +130,128 @@ def portfoy_ekle(email, ticker, adet, maliyet):
 def portfoy_sil(pid):
     """id ile tek bir pozisyonu siler."""
     _run("delete from portfoy where id=%s", (pid,))
+
+
+# ==================== TOPLULUK (Fikirler) ====================
+
+# ---------------- PROFIL ----------------
+def profil_getir(email):
+    """Kullanicinin profilini dondurur (yoksa None)."""
+    r = _run("select kullanici_adi, bio from profil where email=%s", (email,), getir=True)
+    if not r:
+        return None
+    return dict(kullanici_adi=r[0][0], bio=r[0][1])
+
+
+def profil_email_bul(kullanici_adi):
+    """Kullanici adindan e-postayi bulur (herkese acik profil goruntuleme icin)."""
+    r = _run("select email from profil where kullanici_adi=%s", (kullanici_adi,), getir=True)
+    return r[0][0] if r else None
+
+
+def kullanici_adi_musait(kullanici_adi, email):
+    """Bu kullanici adi baskasi tarafindan alinmis mi? (kendi adin serbest)"""
+    r = _run("select email from profil where kullanici_adi=%s", (kullanici_adi,), getir=True)
+    return (not r) or (r[0][0] == email)
+
+
+def profil_kaydet(email, kullanici_adi, bio):
+    """Profili ekler/gunceller."""
+    _run("""insert into profil(email, kullanici_adi, bio) values(%s, %s, %s)
+            on conflict (email) do update
+              set kullanici_adi = excluded.kullanici_adi, bio = excluded.bio""",
+         (email, kullanici_adi.strip(), (bio or "").strip()))
+
+
+# ---------------- PAYLASIMLAR ----------------
+def paylasim_ekle(email, ticker, baslik, metin):
+    """Yeni bir yatirim fikri paylasir."""
+    _run("insert into paylasim(email, ticker, baslik, metin) values(%s, %s, %s, %s)",
+         (email, (ticker or "").upper().strip() or None, baslik.strip(), metin.strip()))
+
+
+def paylasim_sil(pid, email):
+    """Sadece kendi paylasimini siler."""
+    _run("delete from paylasim where id=%s and email=%s", (pid, email))
+
+
+def paylasimlar_getir(email="", sirala="yeni", limit=50, kullanici_email=None):
+    """
+    Akis: paylasimlar + yazar adi + begeni/begenmeme sayilari + yorum sayisi
+    + (giris yapan) kullanicinin kendi oyu. E-posta asla disari verilmez.
+    kullanici_email verilirse sadece o kisinin paylasimlari (profil sayfasi icin).
+    """
+    kosul = "where p.email = %s" if kullanici_email else ""
+    sira = ("order by (coalesce(sum(b.deger),0)) desc, p.olusturuldu desc"
+            if sirala == "populer" else "order by p.olusturuldu desc")
+    sql = f"""
+        select p.id, p.ticker, p.baslik, p.metin, p.olusturuldu, p.email,
+               coalesce(pr.kullanici_adi, 'Anonim') as ad,
+               coalesce(sum(case when b.deger=1 then 1 else 0 end), 0) as begeni,
+               coalesce(sum(case when b.deger=-1 then 1 else 0 end), 0) as begenme,
+               (select count(*) from yorum y where y.paylasim_id = p.id) as yorum_sayi,
+               coalesce(max(case when b.email = %s then b.deger else 0 end), 0) as benim_oyum
+        from paylasim p
+        left join profil pr on pr.email = p.email
+        left join begeni b on b.paylasim_id = p.id
+        {kosul}
+        group by p.id, pr.kullanici_adi
+        {sira}
+        limit %s
+    """
+    params = [email]
+    if kullanici_email:
+        params.append(kullanici_email)
+    params.append(limit)
+    rows = _run(sql, tuple(params), getir=True)
+    return [dict(id=r[0], ticker=r[1], baslik=r[2], metin=r[3], olusturuldu=r[4],
+                 sahip_email=r[5], ad=r[6], begeni=int(r[7]), begenme=int(r[8]),
+                 yorum_sayi=int(r[9]), benim_oyum=int(r[10])) for r in rows]
+
+
+# ---------------- BEGENI ----------------
+def begeni_ver(paylasim_id, email, deger):
+    """
+    Begeni (+1) / begenmeme (-1). Ayni tusa tekrar basinca oy kalkar (toggle).
+    Farkli tusa basinca oy degisir.
+    """
+    mevcut = _run("select deger from begeni where paylasim_id=%s and email=%s",
+                  (paylasim_id, email), getir=True)
+    if mevcut and mevcut[0][0] == deger:
+        _run("delete from begeni where paylasim_id=%s and email=%s", (paylasim_id, email))
+    else:
+        _run("""insert into begeni(paylasim_id, email, deger) values(%s, %s, %s)
+                on conflict (paylasim_id, email) do update set deger = excluded.deger""",
+             (paylasim_id, email, int(deger)))
+
+
+# ---------------- YORUM ----------------
+def yorumlar_getir(paylasim_id):
+    """Bir paylasimin yorumlarini (yazar adiyla) dondurur."""
+    rows = _run("""
+        select y.id, y.metin, y.olusturuldu, coalesce(pr.kullanici_adi, 'Anonim'), y.email
+        from yorum y
+        left join profil pr on pr.email = y.email
+        where y.paylasim_id = %s
+        order by y.olusturuldu asc
+    """, (paylasim_id,), getir=True)
+    return [dict(id=r[0], metin=r[1], olusturuldu=r[2], ad=r[3], sahip_email=r[4])
+            for r in rows]
+
+
+def yorum_ekle(paylasim_id, email, metin):
+    """Bir paylasima yorum ekler."""
+    _run("insert into yorum(paylasim_id, email, metin) values(%s, %s, %s)",
+         (paylasim_id, email, metin.strip()))
+
+
+def yorum_sil(yid, email):
+    """Sadece kendi yorumunu siler."""
+    _run("delete from yorum where id=%s and email=%s", (yid, email))
+
+
+# ---------------- RAPOR (moderasyon) ----------------
+def rapor_ekle(email, paylasim_id=None, yorum_id=None, sebep=""):
+    """Uygunsuz icerigi bildirir."""
+    _run("insert into rapor(email, paylasim_id, yorum_id, sebep) values(%s, %s, %s, %s)",
+         (email, paylasim_id, yorum_id, (sebep or "").strip()))
