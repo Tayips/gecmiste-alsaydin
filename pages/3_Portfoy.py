@@ -20,7 +20,7 @@ try:
 except Exception:
     st.set_page_config(page_title="Portföyüm — WhatIfInvest", page_icon="💼", layout="wide")
 try:
-    st.logo("assets/logo_lockup.png", icon_image="assets/favicon.png")
+    st.logo("assets/logo_lockup.png", size="large", icon_image="assets/favicon.png")
 except Exception:
     pass
 
