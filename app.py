@@ -24,8 +24,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Geçmişte Alsaydın? / If You Had Invested?",
-                   page_icon="📈", layout="wide")
+try:
+    st.set_page_config(page_title="WhatIfInvest — Geçmişte Alsaydın?",
+                       page_icon="assets/favicon.png", layout="wide")
+except Exception:
+    st.set_page_config(page_title="WhatIfInvest — Geçmişte Alsaydın?",
+                       page_icon="📈", layout="wide")
+
+# Marka logosu (sol menu ustu + her sayfada)
+try:
+    st.logo("assets/logo_lockup.png", icon_image="assets/favicon.png")
+except Exception:
+    pass
 
 # ==================== CEVIRILER ====================
 DILLER = {"Türkçe": "tr", "English": "en", "Deutsch": "de",
@@ -501,6 +511,10 @@ with st.sidebar:
     hesapla = st.button(L["calc"], type="primary", width="stretch")
 
 # ==================== ANA ALAN ====================
+try:
+    st.image("assets/logo_lockup.png", width=380)
+except Exception:
+    pass
 st.title(L["title"])
 st.caption(L["intro"])
 
