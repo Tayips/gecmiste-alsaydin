@@ -220,7 +220,9 @@ def sparkline(seri, renk, w=150, h=34):
             f'stroke-width="2" points="{pts}"/></svg>')
 
 # ---------- Dil ----------
-dil_ad = st.session_state.get("k_lang", "Türkçe")
+st.session_state.setdefault("dil_ad", "Türkçe")
+st.session_state.setdefault("tema_koyu", False)
+dil_ad = st.session_state["dil_ad"]
 DARK_LBL = {"tr":"🌙 Karanlık mod","en":"🌙 Dark mode","de":"🌙 Dunkelmodus",
             "ru":"🌙 Тёмная тема","es":"🌙 Modo oscuro","ar":"🌙 الوضع الداكن"}
 def palet(koyu):
@@ -231,10 +233,13 @@ def palet(koyu):
                 muted="#6b7280", kpi="#14213d")
 
 with st.sidebar:
-    dil_ad = st.selectbox("🌐 Language / Dil", list(DILLER.keys()),
-                          index=list(DILLER.keys()).index(dil_ad) if dil_ad in DILLER else 0, key="k_lang")
+    _diller = list(DILLER.keys())
+    _idx = _diller.index(dil_ad) if dil_ad in DILLER else 0
+    dil_ad = st.selectbox("🌐 Language / Dil", _diller, index=_idx)
+    st.session_state["dil_ad"] = dil_ad
 lang = DILLER.get(dil_ad, "tr"); L = T[lang]
-koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
+koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), value=st.session_state["tema_koyu"])
+st.session_state["tema_koyu"] = koyu
 P = palet(koyu)
 btn_css = (f'.stDownloadButton button, [data-testid="stLinkButton"] a, .stButton button '
            f'{{ background:{P["panel"]}; color:{P["text"]}; border:1px solid {P["border"]}; }}'
