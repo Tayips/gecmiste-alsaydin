@@ -437,10 +437,18 @@ def palet(koyu):
         return dict(bg="#0f1420", panel="#1a2233", border="#2a3550", text="#e8eaed", muted="#9aa7bd")
     return dict(bg="#f7f9fc", panel="#ffffff", border="#e6eaf0", text="#14213d", muted="#6b7280")
 
-dil_ad = st.sidebar.selectbox("🌐 Language / Dil", list(DILLER.keys()), key="k_lang")
+# Dil + tema sayfalar arasi KALICI tutulur (normal anahtar; widget anahtari sayfa
+# degisince silinebildigi icin Turkce'ye donuyordu).
+st.session_state.setdefault("dil_ad", "Türkçe")
+st.session_state.setdefault("tema_koyu", False)
+_diller = list(DILLER.keys())
+_idx = _diller.index(st.session_state["dil_ad"]) if st.session_state["dil_ad"] in _diller else 0
+dil_ad = st.sidebar.selectbox("🌐 Language / Dil", _diller, index=_idx)
+st.session_state["dil_ad"] = dil_ad
 lang = DILLER[dil_ad]
 L = T[lang]
-koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), key="k_koyu")
+koyu = st.sidebar.toggle(DARK_LBL.get(lang, "🌙 Dark"), value=st.session_state["tema_koyu"])
+st.session_state["tema_koyu"] = koyu
 P = palet(koyu)
 btn_css = (f'.stDownloadButton button, [data-testid="stLinkButton"] a '
            f'{{ background:{P["panel"]}; color:{P["text"]}; border:1px solid {P["border"]}; }}'
