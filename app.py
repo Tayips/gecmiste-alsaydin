@@ -20,12 +20,12 @@ DARK_LBL = {"tr": "🌙 Karanlık mod", "en": "🌙 Dark mode", "de": "🌙 Dunk
 
 # Menu isimleri (dile gore)
 NAV = {
- "tr": dict(home="🏠 Ana Sayfa", takip="📊 Takip", portfoy="💼 Portföy", fikirler="💡 Fikirler", profil="🙍 Profil"),
- "en": dict(home="🏠 Home", takip="📊 Watchlist", portfoy="💼 Portfolio", fikirler="💡 Ideas", profil="🙍 Profile"),
- "de": dict(home="🏠 Startseite", takip="📊 Watchlist", portfoy="💼 Portfolio", fikirler="💡 Ideen", profil="🙍 Profil"),
- "ru": dict(home="🏠 Главная", takip="📊 Список", portfoy="💼 Портфель", fikirler="💡 Идеи", profil="🙍 Профиль"),
- "es": dict(home="🏠 Inicio", takip="📊 Seguimiento", portfoy="💼 Cartera", fikirler="💡 Ideas", profil="🙍 Perfil"),
- "ar": dict(home="🏠 الرئيسية", takip="📊 المتابعة", portfoy="💼 المحفظة", fikirler="💡 أفكار", profil="🙍 الملف"),
+ "tr": dict(home="🏠 Ana Sayfa", takip="📊 Takip", portfoy="💼 Portföy", sim="🎮 Deneme Hesabı", fikirler="💡 Fikirler", profil="🙍 Profil"),
+ "en": dict(home="🏠 Home", takip="📊 Watchlist", portfoy="💼 Portfolio", sim="🎮 Practice", fikirler="💡 Ideas", profil="🙍 Profile"),
+ "de": dict(home="🏠 Startseite", takip="📊 Watchlist", portfoy="💼 Portfolio", sim="🎮 Übung", fikirler="💡 Ideen", profil="🙍 Profil"),
+ "ru": dict(home="🏠 Главная", takip="📊 Список", portfoy="💼 Портфель", sim="🎮 Тренировка", fikirler="💡 Идеи", profil="🙍 Профиль"),
+ "es": dict(home="🏠 Inicio", takip="📊 Seguimiento", portfoy="💼 Cartera", sim="🎮 Práctica", fikirler="💡 Ideas", profil="🙍 Perfil"),
+ "ar": dict(home="🏠 الرئيسية", takip="📊 المتابعة", portfoy="💼 المحفظة", sim="🎮 تدريب", fikirler="💡 أفكار", profil="🙍 الملف"),
 }
 
 # ---- Dil + tema (tum sayfalarda ortak, kalici) ----
@@ -46,6 +46,7 @@ sayfalar = [
     st.Page("views/anasayfa.py", title=N["home"], url_path="home", default=True),
     st.Page("views/takip.py",    title=N["takip"],    url_path="watchlist"),
     st.Page("views/portfoy.py",  title=N["portfoy"],  url_path="portfolio"),
+    st.Page("views/simulasyon.py", title=N["sim"],   url_path="practice"),
     st.Page("views/fikirler.py", title=N["fikirler"], url_path="ideas"),
     st.Page("views/profil.py",   title=N["profil"],   url_path="profile"),
 ]

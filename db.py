@@ -255,3 +255,134 @@ def rapor_ekle(email, paylasim_id=None, yorum_id=None, sebep=""):
     """Uygunsuz icerigi bildirir."""
     _run("insert into rapor(email, paylasim_id, yorum_id, sebep) values(%s, %s, %s, %s)",
          (email, paylasim_id, yorum_id, (sebep or "").strip()))
+
+
+# ==================== SIMULASYON (Deneme Hesabi / Paper Trading) ====================
+# Tum muhasebe USD uzerinden yapilir. Baslangic bakiyesi 100.000 USD.
+BASLANGIC_USD = 100000.0
+
+
+def _sim_hesap_var(cur, email):
+    """Hesap yoksa 100.000 USD ile olusturur; (nakit, baslangic) dondurur."""
+    cur.execute("select nakit_usd, baslangic_usd from sim_hesap where email=%s", (email,))
+    r = cur.fetchone()
+    if not r:
+        cur.execute("insert into sim_hesap(email, nakit_usd, baslangic_usd) values(%s, %s, %s)",
+                    (email, BASLANGIC_USD, BASLANGIC_USD))
+        return BASLANGIC_USD, BASLANGIC_USD
+    return float(r[0]), float(r[1])
+
+
+def sim_hesap_getir(email):
+    """Nakit (USD) ve baslangic bakiyesini dondurur; yoksa olusturur."""
+    conn = _conn()
+    try:
+        cur = conn.cursor()
+        nakit, bas = _sim_hesap_var(cur, email)
+        conn.commit(); cur.close()
+        return dict(nakit=nakit, baslangic=bas)
+    finally:
+        conn.close()
+
+
+def sim_pozisyonlar_getir(email):
+    """Sanal portfoydeki pozisyonlar (adet + ortalama maliyet USD)."""
+    rows = _run("""select ticker, adet, ort_maliyet_usd from sim_pozisyon
+                   where email=%s and adet > 0 order by ticker""", (email,), getir=True)
+    return [dict(ticker=r[0], adet=float(r[1]), ort_maliyet=float(r[2])) for r in rows]
+
+
+def sim_al(email, ticker, adet, fiyat_usd):
+    """Sanal alim. Tek islemde: nakit dus, pozisyon guncelle (ort. maliyet), gecmise yaz.
+    (basari, hata_kodu) dondurur. hata_kodu: None | 'bakiye'."""
+    adet = float(adet); fiyat_usd = float(fiyat_usd); tutar = adet * fiyat_usd
+    conn = _conn()
+    try:
+        cur = conn.cursor()
+        nakit, _ = _sim_hesap_var(cur, email)
+        if tutar > nakit + 1e-6:
+            cur.close(); return False, "bakiye"
+        cur.execute("update sim_hesap set nakit_usd = nakit_usd - %s, guncellendi=now() where email=%s",
+                    (tutar, email))
+        cur.execute("select adet, ort_maliyet_usd from sim_pozisyon where email=%s and ticker=%s",
+                    (email, ticker))
+        r = cur.fetchone()
+        if r:
+            eski_adet = float(r[0]); eski_mal = float(r[1])
+            yeni_adet = eski_adet + adet
+            yeni_mal = (eski_adet * eski_mal + adet * fiyat_usd) / yeni_adet
+            cur.execute("update sim_pozisyon set adet=%s, ort_maliyet_usd=%s where email=%s and ticker=%s",
+                        (yeni_adet, yeni_mal, email, ticker))
+        else:
+            cur.execute("""insert into sim_pozisyon(email, ticker, adet, ort_maliyet_usd)
+                           values(%s, %s, %s, %s)""", (email, ticker, adet, fiyat_usd))
+        cur.execute("""insert into sim_islem(email, ticker, tur, adet, fiyat_usd, tutar_usd)
+                       values(%s, %s, 'AL', %s, %s, %s)""", (email, ticker, adet, fiyat_usd, tutar))
+        conn.commit(); cur.close()
+        return True, None
+    finally:
+        conn.close()
+
+
+def sim_sat(email, ticker, adet, fiyat_usd):
+    """Sanal satis. (basari, hata_kodu). hata_kodu: None | 'adet'."""
+    adet = float(adet); fiyat_usd = float(fiyat_usd); tutar = adet * fiyat_usd
+    conn = _conn()
+    try:
+        cur = conn.cursor()
+        _sim_hesap_var(cur, email)
+        cur.execute("select adet from sim_pozisyon where email=%s and ticker=%s", (email, ticker))
+        r = cur.fetchone()
+        if not r or float(r[0]) < adet - 1e-6:
+            cur.close(); return False, "adet"
+        eski_adet = float(r[0]); kalan = eski_adet - adet
+        cur.execute("update sim_hesap set nakit_usd = nakit_usd + %s, guncellendi=now() where email=%s",
+                    (tutar, email))
+        if kalan <= 1e-6:
+            cur.execute("delete from sim_pozisyon where email=%s and ticker=%s", (email, ticker))
+        else:
+            cur.execute("update sim_pozisyon set adet=%s where email=%s and ticker=%s",
+                        (kalan, email, ticker))
+        cur.execute("""insert into sim_islem(email, ticker, tur, adet, fiyat_usd, tutar_usd)
+                       values(%s, %s, 'SAT', %s, %s, %s)""", (email, ticker, adet, fiyat_usd, tutar))
+        conn.commit(); cur.close()
+        return True, None
+    finally:
+        conn.close()
+
+
+def sim_sifirla(email):
+    """Hesabi sifirla: pozisyon ve gecmisi sil, nakiti 100.000 USD yap."""
+    conn = _conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("delete from sim_pozisyon where email=%s", (email,))
+        cur.execute("delete from sim_islem where email=%s", (email,))
+        cur.execute("""insert into sim_hesap(email, nakit_usd, baslangic_usd) values(%s, %s, %s)
+                       on conflict(email) do update
+                         set nakit_usd=excluded.nakit_usd, baslangic_usd=excluded.baslangic_usd,
+                             guncellendi=now()""", (email, BASLANGIC_USD, BASLANGIC_USD))
+        conn.commit(); cur.close()
+    finally:
+        conn.close()
+
+
+def sim_islemler_getir(email, limit=60):
+    """Islem gecmisi (en yeni ustte)."""
+    rows = _run("""select ticker, tur, adet, fiyat_usd, tutar_usd, olusturuldu
+                   from sim_islem where email=%s order by olusturuldu desc limit %s""",
+                (email, limit), getir=True)
+    return [dict(ticker=r[0], tur=r[1], adet=float(r[2]), fiyat=float(r[3]),
+                 tutar=float(r[4]), olusturuldu=r[5]) for r in rows]
+
+
+def sim_liderlik_veri():
+    """Liderlik icin ham veri: hesaplar (kullanici adiyla) + tum pozisyonlar.
+    Toplam deger, fiyatlarla sayfada hesaplanir. E-posta disari verilmez (sadece ad)."""
+    hesaplar = _run("""select h.email, coalesce(pr.kullanici_adi, 'Anonim'),
+                              h.nakit_usd, h.baslangic_usd
+                       from sim_hesap h left join profil pr on pr.email = h.email""", getir=True)
+    pozlar = _run("select email, ticker, adet from sim_pozisyon where adet > 0", getir=True)
+    h = [dict(email=r[0], ad=r[1], nakit=float(r[2]), baslangic=float(r[3])) for r in hesaplar]
+    p = [dict(email=r[0], ticker=r[1], adet=float(r[2])) for r in pozlar]
+    return h, p
